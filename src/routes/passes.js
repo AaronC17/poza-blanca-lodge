@@ -85,9 +85,11 @@ router.get('/nuevo', (req, res) => {
       fecha: req.query.fecha || hoy,
       hora_entrada: ahora, hora_salida: '',
       monto: '', estado_pago: 'pagado', observaciones: '',
+      tipo_pase: '', forma_pago: 'efectivo', adultos: 1, ninos: 0, parqueos: 0,
     },
     errors: null,
     isEdit: false,
+    precios: passService.PRECIOS,
   });
 });
 
@@ -101,6 +103,7 @@ router.post('/', async (req, res) => {
       pass: { ...req.body },
       errors: result.errors,
       isEdit: false,
+      precios: passService.PRECIOS,
     });
   }
 
@@ -155,6 +158,7 @@ router.get('/:id/editar', (req, res) => {
     pass,
     errors: null,
     isEdit: true,
+    precios: passService.PRECIOS,
   });
 });
 
@@ -170,6 +174,7 @@ router.post('/:id', (req, res) => {
       pass,
       errors: result.errors,
       isEdit: true,
+      precios: passService.PRECIOS,
     });
   }
 

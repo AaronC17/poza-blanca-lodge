@@ -8,6 +8,16 @@
   const chartPersonas = stats.last7.map(d => d.personas);
   const estadoClass = (e) => e === 'pagado' ? 'badge-paid' : 'badge-pending';
   const estadoLabel = (e) => e === 'pagado' ? 'Pagado' : 'Pendiente';
+  const tipoPaseLabels = { rio: 'Pase Río', camping: 'Camping', rancho: 'Río + Rancho', piscina: 'Piscina', parqueo: 'Parqueo' };
+  const tipoPaseColors = { 
+    rio: 'bg-green-500', 
+    camping: 'bg-yellow-400', 
+    rancho: 'bg-blue-400', 
+    piscina: 'bg-red-400', 
+    parqueo: 'bg-slate-400' 
+  };
+  const formaPagoLabels = { efectivo: 'Efectivo', sinpe: 'Sinpe', tarjeta: 'Tarjeta' };
+  const formaPagoColors = { efectivo: 'bg-green-500', sinpe: 'bg-blue-400', tarjeta: 'bg-purple-400' };
 %>
 
 <div class="space-y-4">
@@ -53,8 +63,8 @@
         </div>
         <form method="GET" action="/dashboard" class="flex items-center gap-1.5">
           <input type="date" name="fecha" value="<%= fecha %>" onchange="this.form.submit()"
-            class="h-8 rounded-lg border border-white/20 bg-white/10 px-2.5 text-xs text-white backdrop-blur focus:outline-none focus:ring-2 focus:ring-poza-400 [color-scheme:light]" />
-          <button type="submit" class="h-8 rounded-lg bg-white/15 px-3 text-xs font-medium text-white hover:bg-white/25 transition">Ir</button>
+            class="h-9 rounded-lg border border-white/20 bg-white/10 px-2.5 text-xs text-white backdrop-blur focus:outline-none focus:ring-2 focus:ring-poza-400 [color-scheme:light] min-w-[140px]" />
+          <button type="submit" class="h-9 rounded-lg bg-white/15 px-3 text-xs font-medium text-white hover:bg-white/25 transition min-h-[36px]">Ir</button>
         </form>
       </div>
     </div>
@@ -75,7 +85,7 @@
   <% } %>
 
   <!-- KPIs compactos -->
-  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+  <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
     <div class="card-3d p-3.5 animate-in-delay-1">
       <div class="flex items-center justify-between">
         <p class="text-xs font-medium text-slate-500">Pases hoy</p>
@@ -83,7 +93,7 @@
           <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" /></svg>
         </span>
       </div>
-      <p class="mt-2 text-2xl font-bold text-slate-900"><%= fmtNum(stats.today.total_pases) %></p>
+      <p class="mt-2 text-xl sm:text-2xl font-bold text-slate-900"><%= fmtNum(stats.today.total_pases) %></p>
       <p class="mt-0.5 text-[11px] text-slate-400"><%= fmtNum(stats.today.total_personas) %> personas</p>
     </div>
     <div class="card-3d p-3.5 animate-in-delay-2">
@@ -122,12 +132,12 @@
   <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
     <!-- Gráfica mejor organizada -->
     <div class="lg:col-span-2 card-3d p-4 animate-in-delay-2">
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 class="text-sm font-semibold text-slate-900">Últimos 7 días</h2>
           <p class="text-xs text-slate-500">Ingresos, pases y personas</p>
         </div>
-        <div class="flex items-center gap-3 text-[11px] text-slate-600">
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600">
           <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-poza-500"></span>Ingresos</span>
           <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-gold-400"></span>Pases</span>
           <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-indigo-400"></span>Personas</span>
@@ -156,13 +166,13 @@
             <p class="text-xs text-slate-400">Sin visitantes hoy</p>
           </div>
         <% } else { stats.visitantesHoy.forEach(function(p) { %>
-          <a href="/pases/<%= p.id %>/detalle" class="flex items-center gap-2.5 rounded-lg px-2 py-2 row-hover mb-1">
+          <a href="/pases/<%= p.id %>/detalle" class="flex items-center gap-2.5 rounded-lg px-2 py-2.5 row-hover mb-1 min-h-[44px]">
             <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-poza-100 to-poza-200 text-[11px] font-semibold text-poza-700 uppercase"><%= (p.nombre || '?').charAt(0) %></div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-[13px] font-medium text-slate-800"><%= p.nombre %></p>
               <p class="truncate text-[11px] text-slate-400"><%= fmtTime(p.hora_entrada) || 'Sin hora' %> · <%= p.cantidad_personas %> pers.</p>
             </div>
-            <span class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium <%= estadoClass(p.estado_pago) %>"><%= estadoLabel(p.estado_pago) %></span>
+            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium <%= estadoClass(p.estado_pago) %>"><%= estadoLabel(p.estado_pago) %></span>
           </a>
         <% }) } %>
       </div>
@@ -228,6 +238,61 @@
           <span class="text-[11px] font-medium text-slate-700">Pendientes</span>
         </a>
       </div>
+    </div>
+  </div>
+
+  <!-- Fila: desglose por tipo de pase y forma de pago -->
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <!-- Por tipo de pase -->
+    <div class="card-3d p-4 animate-in-delay-3">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-slate-900">Por tipo de pase</h2>
+        <span class="text-[11px] text-slate-400">Hoy</span>
+      </div>
+      <% if (stats.porTipoPase.length === 0) { %>
+        <p class="text-xs text-slate-400 py-4 text-center">Sin datos hoy.</p>
+      <% } else { %>
+      <div class="space-y-2">
+        <% stats.porTipoPase.forEach(function(t) { %>
+        <div class="flex items-center gap-3">
+          <span class="h-2.5 w-2.5 rounded-full flex-shrink-0 <%= tipoPaseColors[t.tipo_pase] || 'bg-slate-300' %>"></span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between">
+              <p class="text-[13px] font-medium text-slate-800"><%= tipoPaseLabels[t.tipo_pase] || t.tipo_pase %></p>
+              <p class="text-[13px] font-semibold text-poza-700"><%= fmtCRC(t.monto) %></p>
+            </div>
+            <p class="text-[11px] text-slate-400"><%= t.total %> pase(s)</p>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Por forma de pago -->
+    <div class="card-3d p-4 animate-in-delay-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-slate-900">Por forma de pago</h2>
+        <span class="text-[11px] text-slate-400">Hoy</span>
+      </div>
+      <% if (stats.porFormaPago.length === 0) { %>
+        <p class="text-xs text-slate-400 py-4 text-center">Sin datos hoy.</p>
+      <% } else { %>
+      <div class="space-y-2">
+        <% stats.porFormaPago.forEach(function(f) { %>
+        <div class="flex items-center gap-3">
+          <span class="h-2.5 w-2.5 rounded-full flex-shrink-0 <%= formaPagoColors[f.forma_pago] || 'bg-slate-300' %>"></span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between">
+              <p class="text-[13px] font-medium text-slate-800"><%= formaPagoLabels[f.forma_pago] || f.forma_pago %></p>
+              <p class="text-[13px] font-semibold text-poza-700"><%= fmtCRC(f.monto) %></p>
+            </div>
+            <p class="text-[11px] text-slate-400"><%= f.total %> transacción(es)</p>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
     </div>
   </div>
 </div>

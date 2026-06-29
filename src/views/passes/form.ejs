@@ -1,33 +1,34 @@
 <%
   const err = (field) => errors && errors[field] ? errors[field] : null;
   const val = (field) => (pass[field] != null ? pass[field] : '');
+  const preciosJSON = typeof precios !== 'undefined' ? JSON.stringify(precios) : '{}';
 %>
 
-<div class="mx-auto max-w-5xl">
-  <div class="mb-3 flex items-center gap-2 animate-in">
-    <a href="/pases" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-poza-50 hover:text-poza-700 transition">
-      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
-    </a>
-    <div>
-      <h2 class="font-display text-lg font-semibold text-poza-900 leading-tight"><%= isEdit ? 'Editar pase' : 'Nuevo pase de día' %></h2>
-      <p class="text-xs text-slate-500"><%= isEdit ? 'Actualiza los datos del visitante.' : 'Completa los datos y registra la entrada.' %></p>
-    </div>
-  </div>
-
+<div class="mx-auto max-w-5xl flex flex-col justify-center min-h-[calc(100dvh-8rem)]">
   <% if (errors && errors.general) { %>
-    <div class="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 animate-in"><%= errors.general %></div>
+    <div class="mb-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 animate-in"><%= errors.general %></div>
   <% } %>
 
 <%
   const esc = (s) => String(s == null ? '' : s).replace(/'/g, "\\'").replace(/\n/g, '\\n');
 %>
   <form method="POST" action="<%= isEdit ? '/pases/' + pass.id : '/pases' %>" class="card-3d p-4 sm:p-5 animate-in-delay-1"
-    x-data="visitorSearch({
-      cedula: '<%= esc(val('cedula')) %>',
-      nombre: '<%= esc(val('nombre')) %>',
-      telefono: '<%= esc(val('telefono')) %>',
-      correo: '<%= esc(val('correo')) %>'
-    })"
+    x-data="{
+      ...visitorSearch({
+        cedula: '<%= esc(val('cedula')) %>',
+        nombre: '<%= esc(val('nombre')) %>',
+        telefono: '<%= esc(val('telefono')) %>',
+        correo: '<%= esc(val('correo')) %>'
+      }),
+      ...passForm({
+        tipo_pase: '<%= esc(val('tipo_pase')) || '' %>',
+        forma_pago: '<%= esc(val('forma_pago')) || 'efectivo' %>',
+        adultos: <%= val('adultos') || 1 %>,
+        ninos: <%= val('ninos') || 0 %>,
+        parqueos: <%= val('parqueos') || 0 %>,
+        precios: <%= preciosJSON %>
+      })
+    }"
   >
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
 
@@ -40,48 +41,45 @@
         </p>
         <div x-show="suggestions.length > 0" x-cloak class="text-[10px] text-poza-600 font-medium flex items-center gap-1">
           <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
-          Visitante recurrente — click para autocompletar
+          Visitante recurrente
         </div>
       </div>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <!-- Cédula con autocompletado -->
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div class="relative" @click.outside="suggestions = []">
-          <label for="cedula" class="block text-xs font-medium text-slate-600">Cédula <span class="text-red-500">*</span></label>
-          <input id="cedula" name="cedula" type="text" required value="<%= val('cedula') %>" class="input-poza mt-1 block w-full <%= err('cedula') ? '!border-red-300' : '' %>"
+          <label for="cedula" class="block text-[10px] font-medium text-slate-500">Cédula <span class="text-red-500">*</span></label>
+          <input id="cedula" name="cedula" type="text" required value="<%= val('cedula') %>" class="input-poza mt-0.5 block w-full py-2 text-xs <%= err('cedula') ? '!border-red-300' : '' %>"
             x-model="cedula"
             @input="search()"
             @focus="search()"
             autocomplete="off" />
-          <% if (err('cedula')) { %><p class="mt-1 text-xs text-red-600"><%= err('cedula') %></p><% } %>
-          <!-- Sugerencias -->
+          <% if (err('cedula')) { %><p class="mt-0.5 text-[10px] text-red-600"><%= err('cedula') %></p><% } %>
           <div x-show="suggestions.length > 0" x-cloak
-            class="absolute z-20 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg max-h-56 overflow-y-auto">
+            class="absolute z-20 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg max-h-48 overflow-y-auto">
             <template x-for="s in suggestions" :key="s.cedula">
               <button type="button" @click="select(s)"
-                class="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-poza-50 transition border-b border-slate-50 last:border-0">
+                class="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-poza-50 transition border-b border-slate-50 last:border-0 min-h-[44px]">
                 <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-poza-100 text-[10px] font-bold text-poza-700 uppercase" x-text="s.nombre.charAt(0)"></span>
                 <div class="min-w-0 flex-1">
-                  <p class="truncate text-[12px] font-medium text-slate-800" x-text="s.nombre"></p>
+                  <p class="truncate text-[11px] font-medium text-slate-800 dark:text-white" x-text="s.nombre"></p>
                   <p class="truncate text-[10px] text-slate-400" x-text="s.cedula + ' · ' + s.visitas + ' visita(s)'"></p>
                 </div>
               </button>
             </template>
           </div>
         </div>
-        <div class="sm:col-span-2 lg:col-span-2">
-          <label for="nombre" class="block text-xs font-medium text-slate-600">Nombre completo <span class="text-red-500">*</span></label>
-          <input id="nombre" name="nombre" type="text" required value="<%= val('nombre') %>" class="input-poza mt-1 block w-full <%= err('nombre') ? '!border-red-300' : '' %>" x-model="nombre" />
-          <% if (err('nombre')) { %><p class="mt-1 text-xs text-red-600"><%= err('nombre') %></p><% } %>
+        <div>
+          <label for="nombre" class="block text-[10px] font-medium text-slate-500">Nombre <span class="text-red-500">*</span></label>
+          <input id="nombre" name="nombre" type="text" required value="<%= val('nombre') %>" class="input-poza mt-0.5 block w-full py-2 text-xs <%= err('nombre') ? '!border-red-300' : '' %>" x-model="nombre" />
+          <% if (err('nombre')) { %><p class="mt-0.5 text-[10px] text-red-600"><%= err('nombre') %></p><% } %>
         </div>
         <div>
-          <label for="telefono" class="block text-xs font-medium text-slate-600">Teléfono</label>
-          <input id="telefono" name="telefono" type="tel" value="<%= val('telefono') %>" placeholder="8888-8888" class="input-poza mt-1 block w-full" x-model="telefono" />
+          <label for="telefono" class="block text-[10px] font-medium text-slate-500">Teléfono</label>
+          <input id="telefono" name="telefono" type="tel" value="<%= val('telefono') %>" class="input-poza mt-0.5 block w-full py-2 text-xs" x-model="telefono" />
         </div>
-        <div class="sm:col-span-2 lg:col-span-2">
-          <label for="correo" class="block text-xs font-medium text-slate-600">Correo electrónico</label>
-          <input id="correo" name="correo" type="email" value="<%= val('correo') %>" placeholder="visitante@correo.com" class="input-poza mt-1 block w-full <%= err('correo') ? '!border-red-300' : '' %>" x-model="correo" />
-          <% if (err('correo')) { %><p class="mt-1 text-xs text-red-600"><%= err('correo') %></p><% } %>
-          <p class="mt-0.5 text-[10px] text-slate-400">Se enviará la confirmación aquí.</p>
+        <div>
+          <label for="correo" class="block text-[10px] font-medium text-slate-500">Correo</label>
+          <input id="correo" name="correo" type="email" value="<%= val('correo') %>" class="input-poza mt-0.5 block w-full py-2 text-xs <%= err('correo') ? '!border-red-300' : '' %>" x-model="correo" />
+          <% if (err('correo')) { %><p class="mt-0.5 text-[10px] text-red-600"><%= err('correo') %></p><% } %>
         </div>
       </div>
     </div>
@@ -92,25 +90,112 @@
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
         Reserva
       </p>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
-          <label for="fecha" class="block text-xs font-medium text-slate-600">Fecha <span class="text-red-500">*</span></label>
-          <input id="fecha" name="fecha" type="date" required value="<%= val('fecha') %>" class="input-poza mt-1 block w-full <%= err('fecha') ? '!border-red-300' : '' %>" />
-          <% if (err('fecha')) { %><p class="mt-1 text-xs text-red-600"><%= err('fecha') %></p><% } %>
+          <label for="fecha" class="block text-[10px] font-medium text-slate-500">Fecha <span class="text-red-500">*</span></label>
+          <input id="fecha" name="fecha" type="date" required value="<%= val('fecha') %>" class="input-poza mt-0.5 block w-full py-2 text-xs <%= err('fecha') ? '!border-red-300' : '' %>" />
         </div>
-    <div>
-      <label for="hora_entrada" class="block text-xs font-medium text-slate-600">Entrada</label>
-      <input id="hora_entrada" name="hora_entrada" type="text" value="<%= val('hora_entrada') %>" autocomplete="off" placeholder="Seleccione hora" class="input-poza mt-1 block w-full timepicker" />
-    </div>
-    <div>
-      <label for="hora_salida" class="block text-xs font-medium text-slate-600">Salida</label>
-      <input id="hora_salida" name="hora_salida" type="text" value="<%= val('hora_salida') %>" autocomplete="off" placeholder="Seleccione hora" class="input-poza mt-1 block w-full timepicker" />
-    </div>
         <div>
-          <label for="placa_vehiculo" class="block text-xs font-medium text-slate-600">Placa vehículo</label>
-          <input id="placa_vehiculo" name="placa_vehiculo" type="text" value="<%= val('placa_vehiculo') %>" placeholder="ABC-123" class="input-poza mt-1 block w-full uppercase" />
+          <label for="hora_entrada" class="block text-[10px] font-medium text-slate-500">Entrada</label>
+          <input id="hora_entrada" name="hora_entrada" type="text" value="<%= val('hora_entrada') %>" autocomplete="off" placeholder="Hora" class="input-poza mt-0.5 block w-full py-2 text-xs timepicker" />
+        </div>
+        <div>
+          <label for="hora_salida" class="block text-[10px] font-medium text-slate-500">Salida</label>
+          <input id="hora_salida" name="hora_salida" type="text" value="<%= val('hora_salida') %>" autocomplete="off" placeholder="Hora" class="input-poza mt-0.5 block w-full py-2 text-xs timepicker" />
+        </div>
+        <div>
+          <label for="placa_vehiculo" class="block text-[10px] font-medium text-slate-500">Placa</label>
+          <input id="placa_vehiculo" name="placa_vehiculo" type="text" value="<%= val('placa_vehiculo') %>" placeholder="ABC-123" class="input-poza mt-0.5 block w-full py-2 text-xs uppercase" />
         </div>
       </div>
+    </div>
+
+    <!-- Sección tipo de pase -->
+    <div class="mb-4">
+      <p class="form-section-title mb-2 flex items-center gap-1.5">
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z"/></svg>
+        Tipo de pase
+      </p>
+      <div class="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
+        <label class="relative cursor-pointer">
+          <input type="radio" name="tipo_pase" value="rio" class="sr-only" x-model="tipo_pase" @change="calcular()" <%= val('tipo_pase') === 'rio' ? 'checked' : '' %> />
+          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+            :class="tipo_pase === 'rio'
+              ? 'border-green-500 bg-green-50 dark:border-green-400 dark:bg-green-900/40'
+              : 'border-slate-200 bg-white hover:border-green-300 dark:border-slate-700 dark:bg-slate-800'">
+            <span class="inline-block h-2 w-2 rounded-full bg-green-400"></span>
+            <p class="text-[11px] font-semibold text-slate-800 dark:text-white leading-tight">Río</p>
+            <p class="text-[10px] text-slate-400">₡2,500</p>
+          </div>
+        </label>
+        <label class="relative cursor-pointer">
+          <input type="radio" name="tipo_pase" value="camping" class="sr-only" x-model="tipo_pase" @change="calcular()" />
+          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+            :class="tipo_pase === 'camping'
+              ? 'border-yellow-500 bg-yellow-50 dark:border-yellow-400 dark:bg-yellow-900/40'
+              : 'border-slate-200 bg-white hover:border-yellow-300 dark:border-slate-700 dark:bg-slate-800'">
+            <span class="inline-block h-2 w-2 rounded-full bg-yellow-400"></span>
+            <p class="text-[11px] font-semibold text-slate-800 dark:text-white leading-tight">Camping</p>
+            <p class="text-[10px] text-slate-400">₡6,000</p>
+          </div>
+        </label>
+        <label class="relative cursor-pointer">
+          <input type="radio" name="tipo_pase" value="rancho" class="sr-only" x-model="tipo_pase" @change="calcular()" />
+          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+            :class="tipo_pase === 'rancho'
+              ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/40'
+              : 'border-slate-200 bg-white hover:border-blue-300 dark:border-slate-700 dark:bg-slate-800'">
+            <span class="inline-block h-2 w-2 rounded-full bg-blue-400"></span>
+            <p class="text-[11px] font-semibold text-slate-800 dark:text-white leading-tight">Rancho</p>
+            <p class="text-[10px] text-slate-400">₡10,000+</p>
+          </div>
+        </label>
+        <label class="relative cursor-pointer">
+          <input type="radio" name="tipo_pase" value="piscina" class="sr-only" x-model="tipo_pase" @change="calcular()" />
+          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+            :class="tipo_pase === 'piscina'
+              ? 'border-red-500 bg-red-50 dark:border-red-400 dark:bg-red-900/40'
+              : 'border-slate-200 bg-white hover:border-red-300 dark:border-slate-700 dark:bg-slate-800'">
+            <span class="inline-block h-2 w-2 rounded-full bg-red-400"></span>
+            <p class="text-[11px] font-semibold text-slate-800 dark:text-white leading-tight">Piscina</p>
+            <p class="text-[10px] text-slate-400">₡40,000</p>
+          </div>
+        </label>
+        <label class="relative cursor-pointer">
+          <input type="radio" name="tipo_pase" value="parqueo" class="sr-only" x-model="tipo_pase" @change="calcular()" />
+          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+            :class="tipo_pase === 'parqueo'
+              ? 'border-slate-500 bg-slate-50 dark:border-slate-400 dark:bg-slate-700/50'
+              : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800'">
+            <span class="inline-block h-2 w-2 rounded-full bg-slate-400"></span>
+            <p class="text-[11px] font-semibold text-slate-800 dark:text-white leading-tight">Parqueo</p>
+            <p class="text-[10px] text-slate-400">₡3,000</p>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Sección personas -->
+    <div class="mb-4">
+      <p class="form-section-title mb-2 flex items-center gap-1.5">
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
+        Personas
+      </p>
+      <div class="grid grid-cols-3 gap-2 sm:gap-3">
+        <div>
+          <label for="adultos" class="block text-[10px] font-medium text-slate-500">Adultos <span class="text-red-500">*</span></label>
+          <input id="adultos" name="adultos" type="number" min="0" max="500" required value="<%= val('adultos') || 1 %>" class="input-poza mt-0.5 block w-full py-2 text-xs" x-model.number="adultos" @input="calcular()" />
+        </div>
+        <div>
+          <label for="ninos" class="block text-[10px] font-medium text-slate-500">Niños</label>
+          <input id="ninos" name="ninos" type="number" min="0" max="500" value="<%= val('ninos') || 0 %>" class="input-poza mt-0.5 block w-full py-2 text-xs" x-model.number="ninos" @input="calcular()" />
+        </div>
+        <div>
+          <label for="parqueos" class="block text-[10px] font-medium text-slate-500">Vehículos</label>
+          <input id="parqueos" name="parqueos" type="number" min="0" max="50" value="<%= val('parqueos') || 0 %>" class="input-poza mt-0.5 block w-full py-2 text-xs" x-model.number="parqueos" @input="calcular()" />
+        </div>
+      </div>
+      <input type="hidden" name="cantidad_personas" :value="totalPersonas" />
     </div>
 
     <!-- Sección pago -->
@@ -119,43 +204,43 @@
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Pago
       </p>
-      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <div>
-          <label for="cantidad_personas" class="block text-xs font-medium text-slate-600">Personas <span class="text-red-500">*</span></label>
-          <input id="cantidad_personas" name="cantidad_personas" type="number" min="1" max="500" required value="<%= val('cantidad_personas') %>" class="input-poza mt-1 block w-full <%= err('cantidad_personas') ? '!border-red-300' : '' %>" />
-          <% if (err('cantidad_personas')) { %><p class="mt-1 text-xs text-red-600"><%= err('cantidad_personas') %></p><% } %>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div class="flex-1 min-w-0">
+          <label for="forma_pago" class="block text-[10px] font-medium text-slate-500">Forma de pago <span class="text-red-500">*</span></label>
+          <select id="forma_pago" name="forma_pago" class="input-poza mt-0.5 block w-full py-2 text-xs" x-model="forma_pago">
+            <option value="efectivo">Efectivo</option>
+            <option value="sinpe">Sinpe</option>
+            <option value="tarjeta">Tarjeta</option>
+          </select>
         </div>
-        <div>
-          <label for="monto" class="block text-xs font-medium text-slate-600">Monto (₡) <span class="text-red-500">*</span></label>
-          <div class="relative mt-1">
-            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-semibold text-poza-600">₡</span>
-            <input id="monto" name="monto" type="number" min="0" step="1" required value="<%= val('monto') %>" placeholder="0" class="input-poza block w-full pl-7 <%= err('monto') ? '!border-red-300' : '' %>" />
-          </div>
-          <% if (err('monto')) { %><p class="mt-1 text-xs text-red-600"><%= err('monto') %></p><% } %>
-        </div>
-        <div>
-          <label for="estado_pago" class="block text-xs font-medium text-slate-600">Estado</label>
-          <select id="estado_pago" name="estado_pago" class="input-poza mt-1 block w-full">
+        <div class="flex-1 min-w-0">
+          <label for="estado_pago" class="block text-[10px] font-medium text-slate-500">Estado</label>
+          <select id="estado_pago" name="estado_pago" class="input-poza mt-0.5 block w-full py-2 text-xs">
             <option value="pagado" <%= pass.estado_pago==='pagado' ? 'selected' : '' %>>Pagado</option>
             <option value="pendiente" <%= pass.estado_pago==='pendiente' ? 'selected' : '' %>>Pendiente</option>
           </select>
         </div>
       </div>
+      <input type="hidden" name="monto" :value="montoCalculado" />
     </div>
 
-    <!-- Observaciones -->
-    <div class="mb-5">
-      <label for="observaciones" class="block text-xs font-medium text-slate-600">Observaciones</label>
-      <textarea id="observaciones" name="observaciones" rows="2" class="input-poza mt-1 block w-full resize-none"><%= val('observaciones') %></textarea>
-    </div>
-
-    <!-- Botones -->
-    <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
-      <a href="/pases" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition">Cancelar</a>
-      <button type="submit" class="btn-poza inline-flex items-center gap-1.5 px-4 py-2 text-xs">
-        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-        <%= isEdit ? 'Guardar cambios' : 'Registrar pase' %>
-      </button>
+    <!-- Observaciones + Botones + Total -->
+    <div class="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-end">
+      <div class="flex-1 min-w-0">
+        <label for="observaciones" class="block text-[10px] font-medium text-slate-500">Observaciones</label>
+        <textarea id="observaciones" name="observaciones" rows="2" class="input-poza mt-0.5 block w-full resize-none text-xs py-2"><%= val('observaciones') %></textarea>
+      </div>
+      <div class="flex flex-wrap items-center justify-end gap-2 sm:pb-0.5 flex-shrink-0">
+        <div class="flex flex-col items-center px-2">
+          <p class="text-lg font-bold text-poza-700 leading-none" x-text="formatCRC(montoCalculado)">₡0</p>
+          <p class="text-[9px] text-slate-400 mt-0.5">total</p>
+        </div>
+        <a href="/pases" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition min-h-[40px] inline-flex items-center">Cancelar</a>
+        <button type="submit" class="btn-poza inline-flex items-center gap-1 px-4 py-2.5 text-xs">
+          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+          <%= isEdit ? 'Guardar' : 'Registrar' %>
+        </button>
+      </div>
     </div>
   </form>
 </div>
@@ -166,8 +251,6 @@
 
 <style>
   [x-cloak] { display: none !important; }
-
-  /* Flatpickr time picker — minimal */
   .flatpickr-calendar {
     border-radius: 14px;
     border: 1px solid rgba(148,163,184,0.22);
@@ -177,117 +260,70 @@
     width: auto;
     min-width: 180px;
   }
-  .flatpickr-calendar.open {
-    animation: fpFadeIn 160ms ease-out;
-  }
-  .flatpickr-time {
-    border-top: none;
-    max-height: none;
-    line-height: 1;
-  }
-  .flatpickr-time .numInputWrapper {
-    flex: 1;
-    height: 44px;
-    border-radius: 10px;
-    background: rgba(241,245,249,0.5);
-    margin: 0 3px;
-    transition: background 0.15s;
-  }
-  .flatpickr-time .numInputWrapper:hover {
-    background: rgba(226,232,240,0.55);
-  }
-  .flatpickr-time input {
-    font-size: 17px;
-    font-weight: 600;
-    color: #0f172a;
-    height: 44px;
-    padding: 0;
-  }
-  .flatpickr-time .flatpickr-time-separator {
-    font-size: 17px;
-    font-weight: 500;
-    color: #64748b;
-    margin: 0 2px;
-  }
-  .flatpickr-am-pm {
-    font-size: 11px;
-    font-weight: 700;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    padding: 0 8px;
-    height: 44px;
-    border-radius: 10px;
-    background: rgba(241,245,249,0.5);
-    margin-left: 4px;
-  }
-  .flatpickr-time .numInputWrapper span {
-    border: none;
-    opacity: 0.5;
-  }
-  .flatpickr-time .numInputWrapper span:hover {
-    opacity: 1;
-  }
-  .flatpickr-time .numInputWrapper span.arrowUp:after {
-    border-bottom-color: #64748b;
-  }
-  .flatpickr-time .numInputWrapper span.arrowDown:after {
-    border-top-color: #64748b;
-  }
-
-  /* Inputs hora: estilo limpio para el altInput de flatpickr */
-  .input-poza.flatpickr-input[readonly] {
-    background-color: #fff;
-    cursor: pointer;
-  }
-  /* Evita escritura manual excesiva en el timepicker */
-  .flatpickr-input {
-    caret-color: transparent;
-  }
+  .flatpickr-calendar.open { animation: fpFadeIn 160ms ease-out; }
+  .flatpickr-time { border-top: none; max-height: none; line-height: 1; }
+  .flatpickr-time .numInputWrapper { flex: 1; height: 40px; border-radius: 10px; background: rgba(241,245,249,0.5); margin: 0 3px; transition: background 0.15s; }
+  .flatpickr-time .numInputWrapper:hover { background: rgba(226,232,240,0.55); }
+  .flatpickr-time input { font-size: 15px; font-weight: 600; color: #0f172a; height: 40px; padding: 0; }
+  .flatpickr-time .flatpickr-time-separator { font-size: 15px; font-weight: 500; color: #64748b; margin: 0 2px; }
+  .flatpickr-am-pm { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.4px; padding: 0 6px; height: 40px; border-radius: 10px; background: rgba(241,245,249,0.5); margin-left: 4px; }
+  .flatpickr-time .numInputWrapper span { border: none; opacity: 0.5; }
+  .flatpickr-time .numInputWrapper span:hover { opacity: 1; }
+  .flatpickr-time .numInputWrapper span.arrowUp:after { border-bottom-color: #64748b; }
+  .flatpickr-time .numInputWrapper span.arrowDown:after { border-top-color: #64748b; }
+  .input-poza.flatpickr-input[readonly] { background-color: #fff; cursor: pointer; }
+  .flatpickr-input { caret-color: transparent; }
 </style>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     flatpickr(".timepicker", {
-      enableTime: true,
-      noCalendar: true,
-      dateFormat: "H:i",
-      altInput: true,
-      altFormat: "h:i K",
-      time_24hr: false,
-      locale: "es",
-      minuteIncrement: 15,
-      allowInput: false
+      enableTime: true, noCalendar: true, dateFormat: "H:i",
+      altInput: true, altFormat: "h:i K", time_24hr: false,
+      locale: "es", minuteIncrement: 15, allowInput: false
     });
   });
 
   function visitorSearch(initial) {
     return {
-      cedula: initial.cedula || '',
-      nombre: initial.nombre || '',
-      telefono: initial.telefono || '',
-      correo: initial.correo || '',
-      suggestions: [],
-      timer: null,
-
+      cedula: initial.cedula || '', nombre: initial.nombre || '',
+      telefono: initial.telefono || '', correo: initial.correo || '',
+      suggestions: [], timer: null,
       async search() {
         const q = this.cedula.trim();
         if (q.length < 2) { this.suggestions = []; return; }
         clearTimeout(this.timer);
         this.timer = setTimeout(async () => {
-          try {
-            const res = await fetch('/pases/buscar-visitantes?q=' + encodeURIComponent(q));
-            this.suggestions = await res.json();
-          } catch (e) { this.suggestions = []; }
+          try { const res = await fetch('/pases/buscar-visitantes?q=' + encodeURIComponent(q)); this.suggestions = await res.json(); } catch (e) { this.suggestions = []; }
         }, 200);
       },
+      select(s) { this.cedula = s.cedula; this.nombre = s.nombre; this.telefono = s.telefono || ''; this.correo = s.correo || ''; this.suggestions = []; }
+    };
+  }
 
-      select(s) {
-        this.cedula = s.cedula;
-        this.nombre = s.nombre;
-        this.telefono = s.telefono || '';
-        this.correo = s.correo || '';
-        this.suggestions = [];
-      }
+  function passForm(initial) {
+    return {
+      tipo_pase: initial.tipo_pase || '', forma_pago: initial.forma_pago || 'efectivo',
+      adultos: initial.adultos || 1, ninos: initial.ninos || 0, parqueos: initial.parqueos || 0,
+      precios: initial.precios || {}, montoCalculado: 0,
+      totalPersonas: (initial.adultos || 1) + (initial.ninos || 0),
+      init() { this.calcular(); },
+      calcular() {
+        if (!this.tipo_pase) {
+          this.montoCalculado = 0;
+          this.totalPersonas = (this.adultos || 0) + (this.ninos || 0);
+          return;
+        }
+        const precios = this.precios[this.tipo_pase] || { adulto: 2500, nino: 1500, parqueo: 3000 };
+        this.totalPersonas = (this.adultos || 0) + (this.ninos || 0);
+        if (this.tipo_pase === 'parqueo') {
+          this.montoCalculado = (precios.parqueo || 3000) * Math.max(1, this.parqueos);
+        } else if (this.tipo_pase === 'rancho') {
+          this.montoCalculado = (precios.base || 10000) + ((precios.adulto || 2500) * this.adultos) + ((precios.nino || 1500) * this.ninos) + ((precios.parqueo || 3000) * Math.max(0, this.parqueos));
+        } else {
+          this.montoCalculado = ((precios.adulto || 0) * this.adultos) + ((precios.nino || 0) * this.ninos) + ((precios.parqueo || 0) * Math.max(0, this.parqueos));
+        }
+      },
+      formatCRC(v) { return new Intl.NumberFormat('es-CR', { style: 'currency', currency: 'CRC', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v || 0); }
     };
   }
 </script>

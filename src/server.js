@@ -89,6 +89,20 @@ if (!config.isProd) {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+/* Cache-busting para assets locales: versión basada en mtime del archivo.
+   Recalcula por request (stat barato) para que cambios en CSS se reflejen
+   sin reiniciar el servidor ni tocar configuración. */
+app.use((req, res, next) => {
+  const cssPath = path.join(__dirname, 'public', 'css', 'poza.css');
+  try {
+    const mtime = fs.statSync(cssPath).mtimeMs;
+    res.locals.assetVersion = Math.floor(mtime).toString(36);
+  } catch (e) {
+    res.locals.assetVersion = '1';
+  }
+  next();
+});
+
 const sessionMiddleware = session({
   store: new SQLiteStore({ db: 'sessions.db', dir: path.dirname(config.dbPath) }),
   name: 'connect.sid',

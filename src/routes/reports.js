@@ -266,22 +266,26 @@ router.get('/exportar.pdf', (req, res) => {
     doc.moveDown(0.5);
   }
 
-  // Detalle
-  if (report.rows.length > 0) {
-    doc.fontSize(12).font(fonts.bold).fillColor('#0f172a')
-      .text('Detalle de pases', margin, doc.y);
-    doc.moveDown(0.3);
+    // Detalle
+    if (report.rows.length > 0) {
+      doc.fontSize(12).font(fonts.bold).fillColor('#0f172a')
+        .text('Detalle de pases', margin, doc.y);
+      doc.moveDown(0.3);
 
-    drawTable(doc, [
-      { title: 'Fecha', key: 'fecha', weight: 0.95 },
-      { title: 'Visitante', key: 'nombre', weight: 2.1 },
-      { title: 'Cédula', key: 'cedula', weight: 0.95 },
-      { title: 'Pers.', key: 'cantidad_personas', align: 'right', weight: 0.6 },
-      { title: 'Vehículo', key: 'placa_vehiculo', weight: 1.4, format: (v) => v || '—' },
-      { title: 'Monto', key: 'monto', align: 'right', weight: 0.9, format: (v) => formatCRC(v) },
-      { title: 'Estado', key: 'estado_pago', weight: 0.8, format: (v) => v === 'pagado' ? 'Pagado' : 'Pendiente' },
-    ], report.rows, { fonts });
-  }
+      const tipoPaseLabels = { rio: 'Río', camping: 'Camping', rancho: 'Rancho', piscina: 'Piscina', parqueo: 'Parqueo' };
+      const formaPagoLabels = { efectivo: 'Efectivo', sinpe: 'Sinpe', tarjeta: 'Tarjeta' };
+
+      drawTable(doc, [
+        { title: 'Fecha', key: 'fecha', weight: 0.85 },
+        { title: 'Visitante', key: 'nombre', weight: 1.8 },
+        { title: 'Tipo', key: 'tipo_pase', weight: 0.7, format: (v) => tipoPaseLabels[v] || '—' },
+        { title: 'Ad.', key: 'adultos', align: 'right', weight: 0.45, format: (v, r) => String(v || r.cantidad_personas) },
+        { title: 'Niños', key: 'ninos', align: 'right', weight: 0.45 },
+        { title: 'Pago', key: 'forma_pago', weight: 0.65, format: (v) => formaPagoLabels[v] || '—' },
+        { title: 'Monto', key: 'monto', align: 'right', weight: 0.8, format: (v) => formatCRC(v) },
+        { title: 'Estado', key: 'estado_pago', weight: 0.65, format: (v) => v === 'pagado' ? 'Pagado' : 'Pend.' },
+      ], report.rows, { fonts });
+    }
 
   doc.end();
 

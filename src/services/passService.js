@@ -2,6 +2,29 @@ const { z } = require('zod');
 const { getDb } = require('../config/database');
 const dt = require('../config/datetime');
 
+// Precios por categoría
+const PRECIOS = {
+  rio:      { adulto: 2500, nino: 1500, parqueo: 3000 },
+  camping:  { adulto: 6000, nino: 3000, parqueo: 3000 },
+  rancho:   { adulto: 2500, nino: 1500, parqueo: 3000, base: 10000 },
+  piscina:  { adulto: 40000, nino: 28000, parqueo: 3000 },
+  parqueo:  { adulto: 0, nino: 0, parqueo: 3000 },
+};
+
+function calcularMonto(tipoPase, adultos, ninos, parqueos) {
+  if (!tipoPase) return 0;
+  const precios = PRECIOS[tipoPase] || PRECIOS.rio;
+  let total = 0;
+  if (tipoPase === 'parqueo') {
+    total = precios.parqueo * Math.max(1, parqueos);
+  } else if (tipoPase === 'rancho') {
+    total = (precios.base || 0) + (precios.adulto * adultos) + (precios.nino * ninos) + (precios.parqueo * Math.max(0, parqueos));
+  } else {
+    total = (precios.adulto * adultos) + (precios.nino * ninos) + (precios.parqueo * Math.max(0, parqueos));
+  }
+  return total;
+}
+
 const passSchema = z.object({
   cedula: z.string().trim().min(1, 'La cédula es obligatoria').max(50),
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(150),
@@ -15,15 +38,27 @@ const passSchema = z.object({
   monto: z.coerce.number().min(0, 'El monto no puede ser negativo'),
   estado_pago: z.enum(['pagado', 'pendiente'], { message: 'Estado de pago no válido' }),
   observaciones: z.string().trim().max(1000).optional().or(z.literal('')),
+  tipo_pase: z.enum(['rio', 'camping', 'rancho', 'piscina', 'parqueo'], { message: 'Tipo de pase no válido' }),
+  forma_pago: z.enum(['efectivo', 'sinpe', 'tarjeta'], { message: 'Forma de pago no válida' }),
+  adultos: z.coerce.number().int().min(0, 'Mínimo 0 adultos').max(500),
+  ninos: z.coerce.number().int().min(0, 'Mínimo 0 niños').max(500),
+  parqueos: z.coerce.number().int().min(0, 'Mínimo 0 parqueos').max(50),
 });
 
 function validatePass(data) {
   const source = data || {};
   const normalized = {};
-  const stringFields = ['cedula', 'nombre', 'telefono', 'correo', 'placa_vehiculo', 'fecha', 'hora_entrada', 'hora_salida', 'estado_pago', 'observaciones'];
+  const stringFields = ['cedula', 'nombre', 'telefono', 'correo', 'placa_vehiculo', 'fecha', 'hora_entrada', 'hora_salida', 'estado_pago', 'observaciones', 'tipo_pase', 'forma_pago'];
   for (const k of stringFields) normalized[k] = source[k] == null ? '' : source[k];
   normalized.cantidad_personas = source.cantidad_personas == null || source.cantidad_personas === '' ? '' : source.cantidad_personas;
   normalized.monto = source.monto == null || source.monto === '' ? '' : source.monto;
+  normalized.adultos = source.adultos == null || source.adultos === '' ? '' : source.adultos;
+  normalized.ninos = source.ninos == null || source.ninos === '' ? '' : source.ninos;
+  normalized.parqueos = source.parqueos == null || source.parqueos === '' ? '' : source.parqueos;
+
+  // Defaults
+  if (!normalized.tipo_pase) normalized.tipo_pase = 'rio';
+  if (!normalized.forma_pago) normalized.forma_pago = 'efectivo';
 
   const result = passSchema.safeParse(normalized);
   if (result.success) {
@@ -34,6 +69,8 @@ function validatePass(data) {
         errors: { hora_salida: 'La hora de salida debe ser posterior a la de entrada.' },
       };
     }
+    // Calcular monto automáticamente si se proporciona tipo_pase
+    const montoCalculado = calcularMonto(d.tipo_pase, d.adultos, d.ninos, d.parqueos);
     return {
       valid: true,
       data: {
@@ -46,9 +83,14 @@ function validatePass(data) {
         fecha: d.fecha,
         hora_entrada: d.hora_entrada || null,
         hora_salida: d.hora_salida || null,
-        monto: d.monto,
+        monto: montoCalculado,
         estado_pago: d.estado_pago,
         observaciones: d.observaciones || null,
+        tipo_pase: d.tipo_pase,
+        forma_pago: d.forma_pago,
+        adultos: d.adultos,
+        ninos: d.ninos,
+        parqueos: d.parqueos,
       },
     };
   }
@@ -73,10 +115,12 @@ function createPass(data, userId) {
   const info = db.prepare(`
     INSERT INTO passes
       (cedula, nombre, telefono, correo, cantidad_personas, placa_vehiculo,
-       fecha, hora_entrada, hora_salida, monto, estado_pago, observaciones, creado_por)
+       fecha, hora_entrada, hora_salida, monto, estado_pago, observaciones, creado_por,
+       tipo_pase, forma_pago, adultos, ninos, parqueos)
     VALUES
       (@cedula, @nombre, @telefono, @correo, @cantidad_personas, @placa_vehiculo,
-       @fecha, @hora_entrada, @hora_salida, @monto, @estado_pago, @observaciones, @creado_por)
+       @fecha, @hora_entrada, @hora_salida, @monto, @estado_pago, @observaciones, @creado_por,
+       @tipo_pase, @forma_pago, @adultos, @ninos, @parqueos)
   `).run({ ...d, creado_por: userId || null });
 
   return { ok: true, id: info.lastInsertRowid };
@@ -105,6 +149,11 @@ function updatePass(id, data) {
       monto = @monto,
       estado_pago = @estado_pago,
       observaciones = @observaciones,
+      tipo_pase = @tipo_pase,
+      forma_pago = @forma_pago,
+      adultos = @adultos,
+      ninos = @ninos,
+      parqueos = @parqueos,
       updated_at = datetime('now')
     WHERE id = @id
   `).run({ ...d, id });
@@ -246,7 +295,21 @@ function getDashboardStats(date = todayISO()) {
     FROM passes WHERE strftime('%Y-%m', fecha) = strftime('%Y-%m', @fecha)
   `).get({ fecha: date });
 
-  return { today, last7, month, recientes, visitantesHoy, pendientesHoy, topVisitantes, promedio };
+  // Desglose por tipo de pase
+  const porTipoPase = db.prepare(`
+    SELECT tipo_pase, COUNT(*) as total, COALESCE(SUM(monto), 0) as monto
+    FROM passes WHERE fecha = @fecha
+    GROUP BY tipo_pase ORDER BY monto DESC
+  `).all({ fecha: date });
+
+  // Desglose por forma de pago
+  const porFormaPago = db.prepare(`
+    SELECT forma_pago, COUNT(*) as total, COALESCE(SUM(monto), 0) as monto
+    FROM passes WHERE fecha = @fecha
+    GROUP BY forma_pago ORDER BY monto DESC
+  `).all({ fecha: date });
+
+  return { today, last7, month, recientes, visitantesHoy, pendientesHoy, topVisitantes, promedio, porTipoPase, porFormaPago };
 }
 
 function getReport(fechaDesde, fechaHasta) {
@@ -306,7 +369,7 @@ function searchVisitors(q) {
 function buildCSV(rows) {
   // UTF-8 BOM to ensure Excel reads accents correctly
   const BOM = '\uFEFF'; 
-  const headers = ['Fecha', 'Cédula', 'Nombre Completo', 'Teléfono', 'Correo Electrónico', 'Cantidad Personas', 'Placa Vehículo', 'Hora Entrada', 'Hora Salida', 'Monto Total', 'Estado de Pago', 'Observaciones Extras'];
+  const headers = ['Fecha', 'Cédula', 'Nombre Completo', 'Teléfono', 'Correo Electrónico', 'Tipo de Pase', 'Forma de Pago', 'Adultos', 'Niños', 'Parqueos', 'Cantidad Personas', 'Placa Vehículo', 'Hora Entrada', 'Hora Salida', 'Monto Total', 'Estado de Pago', 'Observaciones Extras'];
   const escape = (v) => {
     if (v == null) return '';
     const s = String(v).replace(/"/g, '""');
@@ -316,8 +379,13 @@ function buildCSV(rows) {
   const lines = [headers.join(';')];
   for (const r of rows) {
     const formattedDate = new Date(r.fecha + 'T00:00:00').toLocaleDateString('es-CR');
+    const tipoPaseLabels = { rio: 'Pase Río', camping: 'Camping', rancho: 'Pase Río + Rancho', piscina: 'Day Pass Piscina', parqueo: 'Parqueo' };
+    const formaPagoLabels = { efectivo: 'Efectivo', sinpe: 'Sinpe', tarjeta: 'Tarjeta' };
     lines.push([
       formattedDate, r.cedula, r.nombre, r.telefono, r.correo,
+      tipoPaseLabels[r.tipo_pase] || r.tipo_pase || '—',
+      formaPagoLabels[r.forma_pago] || r.forma_pago || '—',
+      r.adultos || 0, r.ninos || 0, r.parqueos || 0,
       r.cantidad_personas, r.placa_vehiculo, fmtTime(r.hora_entrada), fmtTime(r.hora_salida),
       r.monto, r.estado_pago.toUpperCase(), r.observaciones
     ].map(escape).join(';'));
@@ -349,4 +417,6 @@ module.exports = {
   buildCSV,
   fmtTime,
   todayISO,
+  PRECIOS,
+  calcularMonto,
 };

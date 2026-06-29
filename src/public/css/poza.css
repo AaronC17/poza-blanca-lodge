@@ -78,7 +78,8 @@
 
 * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 
-html { scroll-behavior: smooth; }
+html, body { margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
@@ -139,12 +140,16 @@ body {
   border: none;
   border-radius: 10px;
   font-weight: 600;
-  padding: 8px 16px;
+  padding: 9px 16px;
+  min-height: 36px;
   cursor: pointer;
   position: relative;
   overflow: hidden;
   transition: transform 0.2s, box-shadow 0.2s;
   box-shadow: 0 2px 8px rgba(29,64,26,0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .btn-poza::after {
   content: '';
@@ -165,9 +170,10 @@ body {
 .input-poza {
   border: 1.5px solid #e2e8f0;
   border-radius: 10px;
-  padding: 7px 12px;
+  padding: 8px 12px;
   font-size: 13px;
   line-height: 1.4;
+  min-height: 36px;
   transition: all 0.2s;
   background: #fff;
 }
@@ -185,6 +191,33 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* ---------- Combo boxes (selects) profesionales ---------- */
+select.input-poza {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 15px 15px;
+}
+select.input-poza:hover {
+  border-color: #cbd5e1;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%23475569'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+}
+select.input-poza:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%2341a61f'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+}
+select.input-poza:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+select.input-poza option {
+  padding: 7px 12px;
 }
 
 /* ---------- Sidebar ---------- */
@@ -293,31 +326,43 @@ html.dark .sidebar-poza::before { display: none; }
   to { transform: scale(1.16); }
 }
 
-/* Indicadores (dots) */
+/* Indicadores (dots) — área táctil 44px, dot visual pequeño centrado */
 .hero-dots {
   position: absolute;
-  bottom: 10px;
-  right: 14px;
+  bottom: 4px;
+  right: 8px;
   display: flex;
-  gap: 5px;
+  gap: 2px;
   z-index: 3;
 }
 .hero-dot {
-  width: 6px;
-  height: 6px;
+  width: 44px;
+  height: 44px;
   border-radius: 999px;
-  background: rgba(255,255,255,0.4);
+  background: transparent;
   border: none;
   cursor: pointer;
   padding: 0;
+  position: relative;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero-dot::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.5);
   transition: all 0.3s;
 }
-.hero-dot.active {
+.hero-dot.active::before {
   background: #fff;
   width: 18px;
 }
 
-/* Flechas de navegación */
+/* Flechas de navegación — visibles en touch, 44px táctil */
 .hero-arrow {
   position: absolute;
   top: 50%;
@@ -326,8 +371,8 @@ html.dark .sidebar-poza::before { display: none; }
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
   background: rgba(255,255,255,0.15);
   backdrop-filter: blur(8px);
@@ -339,8 +384,12 @@ html.dark .sidebar-poza::before { display: none; }
 }
 .hero-banner:hover .hero-arrow { opacity: 1; }
 .hero-arrow:hover { background: rgba(255,255,255,0.3); }
-.hero-arrow.prev { left: 10px; }
-.hero-arrow.next { right: 10px; }
+.hero-arrow.prev { left: 8px; }
+.hero-arrow.next { right: 8px; }
+/* En dispositivos táctiles (sin hover): flechas siempre visibles y 44px */
+@media (hover: none) {
+  .hero-arrow { opacity: 1; width: 44px; height: 44px; }
+}
 
 /* ---------- Efectos de enfoque ---------- */
 .focus-ring:focus { outline: none; box-shadow: 0 0 0 3px rgba(65,166,31,0.15); }
@@ -402,8 +451,16 @@ html.dark .sidebar-poza::before { display: none; }
 @media (max-width: 640px) {
   .card-3d { border-radius: 14px; }
   .hero-banner { border-radius: 14px; }
-  .btn-poza { padding: 8px 14px; font-size: 13px; }
-  .input-poza { padding: 7px 10px; }
+  .btn-poza { padding: 10px 14px; font-size: 13px; }
+  .input-poza { padding: 9px 10px; }
+}
+
+/* ---------- Tap targets táctiles: 44px solo en dispositivos touch ---------- */
+@media (hover: none) and (pointer: coarse) {
+  .btn-poza { min-height: 44px; padding: 11px 16px; }
+  .input-poza { min-height: 44px; padding: 10px 12px; }
+  select.input-poza { padding-right: 36px; background-position: right 12px center; }
+  .touch-target { height: 44px; width: 44px; }
 }
 
 /* ============================================================
@@ -498,6 +555,24 @@ html.dark .input-poza {
   color: rgb(226 232 240);
 }
 html.dark .input-poza::placeholder { color: rgb(100 116 139); }
+
+/* ---- Selects en dark: chevron claro + foco con acento de marca ---- */
+html.dark select.input-poza {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+}
+html.dark select.input-poza:hover {
+  border-color: rgb(71 85 105);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%23cbd5e1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+}
+html.dark select.input-poza:focus {
+  border-color: var(--poza-500);
+  box-shadow: 0 0 0 3px rgba(65,166,31,0.18);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke-width='2' stroke='%239bd977'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E");
+}
+html.dark select.input-poza option {
+  background: rgb(15 23 42);
+  color: rgb(226 232 240);
+}
 html.dark .row-hover:hover { background: rgba(148,163,184,0.08); }
 html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(148,163,184,0.18); }
 html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(148,163,184,0.14); }
