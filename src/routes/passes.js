@@ -113,18 +113,20 @@ router.post('/', async (req, res, next) => {
     const pass = await passService.getPassById(result.id);
     realtime.notifyPassChange('create', pass);
 
-    try {
-      const emailResult = await emailService.sendPassConfirmation(pass);
-      if (emailResult.status === 'sent') {
-        req.flash('success', 'Pase registrado y correo de confirmación enviado.');
-      } else if (emailResult.status === 'skipped') {
-        req.flash('info', `Pase registrado. Correo no enviado: ${emailResult.reason}`);
-      } else {
-        req.flash('info', `Pase registrado. No se pudo enviar el correo: ${emailResult.error}`);
-      }
-    } catch (e) {
-      req.flash('info', 'Pase registrado. Hubo un problema al enviar el correo.');
-    }
+    // Envío de correo desactivado temporalmente
+    // try {
+    //   const emailResult = await emailService.sendPassConfirmation(pass);
+    //   if (emailResult.status === 'sent') {
+    //     req.flash('success', 'Pase registrado y correo de confirmación enviado.');
+    //   } else if (emailResult.status === 'skipped') {
+    //     req.flash('info', `Pase registrado. Correo no enviado: ${emailResult.reason}`);
+    //   } else {
+    //     req.flash('info', `Pase registrado. No se pudo enviar el correo: ${emailResult.error}`);
+    //   }
+    // } catch (e) {
+    //   req.flash('info', 'Pase registrado. Hubo un problema al enviar el correo.');
+    // }
+    req.flash('success', 'Pase registrado correctamente.');
 
     res.redirect('/pases');
   } catch (err) { next(err); }
