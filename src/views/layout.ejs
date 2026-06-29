@@ -16,6 +16,12 @@
       } catch (e) {}
     })();
   </script>
+  <style id="poza-critical">
+    html { font-size: 16px !important; scroll-behavior: smooth; }
+    *, *::before, *::after { -webkit-text-size-adjust: 100% !important; text-size-adjust: 100% !important; -webkit-font-smoothing: antialiased; }
+    html, body { margin: 0; padding: 0; }
+    body { font-family: 'Inter', system-ui, sans-serif; }
+  </style>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -86,7 +92,8 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cormorant+Garamond:wght@500;600;700&display=swap" />
   <link rel="stylesheet" href="/css/poza.css?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '1' %>" />
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <% if (typeof extraHead !== 'undefined') { %><%- extraHead %><% } %>
