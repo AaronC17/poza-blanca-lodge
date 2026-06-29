@@ -19,7 +19,6 @@ async function connectDb() {
 
   connecting = mongoose.connect(config.mongodbUri, {
     dbName: config.mongodbDbName,
-    serverApi: { version: '1', strict: true, deprecationErrors: true },
     maxPoolSize: 10,
     minPoolSize: 1,
     serverSelectionTimeoutMS: 15000,
