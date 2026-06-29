@@ -56,28 +56,4 @@ router.get('/logout', (req, res) => {
   });
 });
 
-router.get('/debug-auth', async (req, res) => {
-  const bcrypt = require('bcryptjs');
-  const { User } = require('../config/database');
-  const config = require('../config/env');
-  try {
-    await require('../config/database').connectDb();
-    const mongoose = require('mongoose');
-    const user = await User.findOne({ username: config.admin.username }).lean();
-    const allUsers = await User.find({}, { username: 1 }).lean();
-    const passwordWorks = user ? bcrypt.compareSync(config.admin.password, user.password_hash) : false;
-    res.json({
-      userFound: !!user,
-      passwordWorks,
-      usernameQueried: config.admin.username,
-      passwordLength: config.admin.password ? config.admin.password.length : 0,
-      dbName: mongoose.connection.db.databaseName,
-      allUsers: allUsers.map(u => u.username),
-      mongodbUri: config.mongodbUri ? config.mongodbUri.substring(0, 50) + '...' : 'NOT SET',
-    });
-  } catch (e) {
-    res.json({ error: e.message });
-  }
-});
-
 module.exports = router;
