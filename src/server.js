@@ -4,19 +4,17 @@ const http = require('http');
 const express = require('express');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
+const { MongoStore } = require('connect-mongo');
 const config = require('./config/env');
 const logger = require('./config/logger');
 
-const dataDir = path.dirname(config.dbPath);
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
-const SQLiteStore = require('connect-sqlite3')(session);
 const expressLayouts = require('express-ejs-layouts');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const methodOverride = require('method-override');
 
-const { initDatabase } = require('./db/init');
+const { connectDb } = require('./config/database');
+const { seedAdmin } = require('./db/seed');
 const { requireAuth } = require('./middleware/auth');
 const flashMiddleware = require('./middleware/flash');
 const csrfMiddleware = require('./middleware/csrf');
@@ -29,23 +27,31 @@ const passesRoutes = require('./routes/passes');
 const reportsRoutes = require('./routes/reports');
 
 const app = express();
-const server = http.createServer(app);
 
-const { Server } = require('socket.io');
-const io = new Server(server, { cors: { origin: config.appUrl } });
-realtime.setIo(io);
+// Socket.io solo en modo long-running (local / Railway / Render).
+// En Vercel serverless no hay servidor HTTP persistente → se omite.
+const isServerless = !!process.env.VERCEL;
+let server = null;
+let io = null;
 
-io.use((socket, next) => {
-  const raw = socket.handshake.headers.cookie || '';
-  const sid = raw.split(';').map((s) => s.trim()).find((c) => c.startsWith('connect.sid='));
-  if (!sid) return next(new Error('No autenticado'));
-  next();
-});
+if (!isServerless) {
+  server = http.createServer(app);
+  const { Server } = require('socket.io');
+  io = new Server(server, { cors: { origin: config.appUrl } });
+  realtime.setIo(io);
 
-io.on('connection', (socket) => {
-  logger.info({ id: socket.id }, 'socket connected');
-  socket.on('disconnect', () => logger.debug({ id: socket.id }, 'socket disconnected'));
-});
+  io.use((socket, next) => {
+    const raw = socket.handshake.headers.cookie || '';
+    const sid = raw.split(';').map((s) => s.trim()).find((c) => c.startsWith('connect.sid='));
+    if (!sid) return next(new Error('No autenticado'));
+    next();
+  });
+
+  io.on('connection', (socket) => {
+    logger.info({ id: socket.id }, 'socket connected');
+    socket.on('disconnect', () => logger.debug({ id: socket.id }, 'socket disconnected'));
+  });
+}
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -103,8 +109,26 @@ app.use((req, res, next) => {
   next();
 });
 
+// Middleware que asegura la conexión a MongoDB antes de procesar cada request.
+// Crítico en serverless (cada invocación es un cold start potencial).
+app.use(async (req, res, next) => {
+  try {
+    await connectDb();
+    next();
+  } catch (err) {
+    logger.error({ err: err.message }, 'No se pudo conectar a MongoDB');
+    next(err);
+  }
+});
+
 const sessionMiddleware = session({
-  store: new SQLiteStore({ db: 'sessions.db', dir: path.dirname(config.dbPath) }),
+  store: MongoStore.create({
+    mongoUrl: config.mongodbUri,
+    dbName: config.mongodbDbName,
+    collectionName: 'sessions',
+    ttl: 12 * 60 * 60, // 12h, alineado con cookie maxAge
+    autoRemove: 'native',
+  }),
   name: 'connect.sid',
   secret: config.sessionSecret,
   resave: false,
@@ -156,8 +180,20 @@ app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.use(notFound);
 app.use(errorHandler);
 
-function start() {
-  initDatabase();
+async function start() {
+  try {
+    await connectDb();
+    await seedAdmin();
+    logger.info('[db] MongoDB lista y admin seedado.');
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error inicializando MongoDB en start()');
+    // No abortamos: el middleware por-request reintentará la conexión.
+  }
+
+  if (isServerless) {
+    logger.info('Modo serverless detectado (VERCEL). Sin server.listen.');
+    return;
+  }
 
   server.listen(config.port, '0.0.0.0', () => {
     logger.info(

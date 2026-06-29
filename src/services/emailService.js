@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const nodemailer = require('nodemailer');
 const config = require('../config/env');
-const { getDb } = require('../config/database');
+const { EmailLog } = require('../config/database');
 const { fmtTime } = require('./passService');
 
 let transporter = null;
@@ -27,12 +27,15 @@ function getTransporter() {
   return transporter;
 }
 
-function logEmail(passId, to, subject, status, error) {
+async function logEmail(passId, to, subject, status, error) {
   try {
-    const db = getDb();
-    db.prepare(
-      'INSERT INTO email_logs (pass_id, to_address, subject, status, error) VALUES (?, ?, ?, ?, ?)'
-    ).run(passId || null, to, subject || null, status, error || null);
+    await EmailLog.create({
+      pass_id: passId || null,
+      to_address: to,
+      subject: subject || null,
+      status,
+      error: error || null,
+    });
   } catch (e) {
     console.error('[email] No se pudo registrar log de correo:', e.message);
   }
@@ -193,13 +196,13 @@ function buildPassEmail(pass) {
 
 async function sendPassConfirmation(pass) {
   if (!pass.correo) {
-    logEmail(pass.id, '(sin correo)', null, 'skipped', 'El pase no tiene correo.');
+    await logEmail(pass.id, '(sin correo)', null, 'skipped', 'El pase no tiene correo.');
     return { status: 'skipped', reason: 'Sin correo destinatario.' };
   }
 
   if (!isConfigured()) {
     console.warn('[email] SMTP no configurado. Se omite el envío real. Revisa el .env.');
-    logEmail(pass.id, pass.correo, null, 'skipped', 'SMTP no configurado.');
+    await logEmail(pass.id, pass.correo, null, 'skipped', 'SMTP no configurado.');
     return { status: 'skipped', reason: 'SMTP no configurado.' };
   }
 
@@ -215,11 +218,11 @@ async function sendPassConfirmation(pass) {
       html,
       attachments,
     });
-    logEmail(pass.id, pass.correo, subject, 'sent', null);
+    await logEmail(pass.id, pass.correo, subject, 'sent', null);
     return { status: 'sent', messageId: info.messageId };
   } catch (err) {
     console.error('[email] Error enviando correo:', err.message);
-    logEmail(pass.id, pass.correo, subject, 'error', err.message);
+    await logEmail(pass.id, pass.correo, subject, 'error', err.message);
     return { status: 'error', error: err.message };
   }
 }

@@ -1,12 +1,11 @@
 const bcrypt = require('bcryptjs');
-const { getDb, initSchema } = require('../config/database');
+const { connectDb, User } = require('../config/database');
 const config = require('../config/env');
 
-function seedAdmin() {
-  const db = getDb();
-  initSchema();
+async function seedAdmin() {
+  await connectDb();
 
-  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(config.admin.username);
+  const existing = await User.findOne({ username: config.admin.username }).lean();
 
   if (existing) {
     console.log(`[seed] El usuario "${config.admin.username}" ya existe. Se omite la creación.`);
@@ -14,17 +13,23 @@ function seedAdmin() {
   }
 
   const hash = bcrypt.hashSync(config.admin.password, 10);
-  db.prepare(
-    'INSERT INTO users (username, password_hash, name) VALUES (?, ?, ?)'
-  ).run(config.admin.username, hash, config.admin.name);
+  await User.create({
+    username: config.admin.username,
+    password_hash: hash,
+    name: config.admin.name,
+  });
 
   console.log(`[seed] Usuario administrador "${config.admin.username}" creado correctamente.`);
   console.log(`[seed] Contraseña: la definida en .env (ADMIN_PASSWORD).`);
 }
 
 if (require.main === module) {
-  seedAdmin();
-  process.exit(0);
+  seedAdmin()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('[seed] Error:', err);
+      process.exit(1);
+    });
 }
 
 module.exports = { seedAdmin };

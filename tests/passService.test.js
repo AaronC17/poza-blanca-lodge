@@ -1,9 +1,6 @@
-const { initDatabase } = require('../src/db/init');
+const { seedAdmin } = require('../src/db/seed');
+const { clearAll } = require('./setup');
 const passService = require('../src/services/passService');
-
-beforeAll(() => {
-  initDatabase();
-});
 
 const validBase = {
   cedula: '1-234-567',
@@ -13,6 +10,10 @@ const validBase = {
   monto: 5000,
   estado_pago: 'pagado',
 };
+
+afterEach(async () => {
+  await clearAll();
+});
 
 describe('passService.validatePass', () => {
   test('valida un pase correcto', () => {
@@ -54,27 +55,27 @@ describe('passService.validatePass', () => {
 });
 
 describe('passService create/list with pagination + monto filters', () => {
-  test('crea y lista con filtros de monto', () => {
-    const r1 = passService.createPass({ ...validBase, monto: 1000 }, 1);
-    const r2 = passService.createPass({ ...validBase, monto: 9000 }, 1);
+  test('crea y lista con filtros de monto', async () => {
+    const r1 = await passService.createPass({ ...validBase, monto: 1000 }, null);
+    const r2 = await passService.createPass({ ...validBase, monto: 9000 }, null);
     expect(r1.ok).toBe(true);
     expect(r2.ok).toBe(true);
 
-    const high = passService.listPasses({
+    const high = await passService.listPasses({
       fecha: validBase.fecha,
       montoMin: 5000,
       limit: 0,
     });
     expect(high.rows.every((p) => p.monto >= 5000)).toBe(true);
 
-    const low = passService.listPasses({
+    const low = await passService.listPasses({
       fecha: validBase.fecha,
       montoMax: 1000,
       limit: 0,
     });
     expect(low.rows.every((p) => p.monto <= 1000)).toBe(true);
 
-    const paged = passService.listPasses({
+    const paged = await passService.listPasses({
       fecha: validBase.fecha,
       limit: 1,
       page: 1,

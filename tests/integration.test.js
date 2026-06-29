@@ -1,9 +1,34 @@
 const request = require('supertest');
-const { initDatabase } = require('../src/db/init');
+const config = require('../src/config/env');
+const { seedAdmin } = require('../src/db/seed');
+const { Pass, User, EmailLog } = require('../src/config/database');
 const { app } = require('../src/server');
 
-beforeAll(() => {
-  initDatabase();
+async function clearAll() {
+  await Promise.all([
+    Pass.deleteMany({}),
+    User.deleteMany({}),
+    EmailLog.deleteMany({}),
+  ]);
+}
+
+beforeAll(async () => {
+  await clearAll();
+  await seedAdmin();
+});
+
+beforeEach(async () => {
+  // Asegura que el admin exista para cada test (afterEach del setup podría limpiar).
+  const admin = await User.findOne({ username: config.admin.username });
+  if (!admin) await seedAdmin();
+});
+
+afterAll(async () => {
+  const mongoose = require('mongoose');
+  try {
+    await clearAll();
+    await mongoose.connection.close();
+  } catch (e) {}
 });
 
 function parseCookies(res) {
@@ -37,7 +62,7 @@ describe('Auth + CSRF integration', () => {
     const csrf = cookies['csrf_token'];
     expect(csrf).toBeTruthy();
 
-    const login = await agent.post('/login').send('username=admin&password=testpass123');
+    const login = await agent.post('/login').send(`username=${config.admin.username}&password=${config.admin.password}`);
     expect(login.status).toBe(302);
     expect(login.headers.location).toBe('/dashboard');
 

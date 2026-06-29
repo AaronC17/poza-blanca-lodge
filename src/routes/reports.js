@@ -40,22 +40,24 @@ router.use((req, res, next) => {
   next();
 });
 
-router.get('/', (req, res) => {
-  const fin = dt.todayISO();
-  const inicio = dt.addDaysISO(fin, -29);
+router.get('/', async (req, res, next) => {
+  try {
+    const fin = dt.todayISO();
+    const inicio = dt.addDaysISO(fin, -29);
 
-  const fechaDesde = req.query.fechaDesde || inicio;
-  const fechaHasta = req.query.fechaHasta || fin;
+    const fechaDesde = req.query.fechaDesde || inicio;
+    const fechaHasta = req.query.fechaHasta || fin;
 
-  const report = passService.getReport(fechaDesde, fechaHasta);
+    const report = await passService.getReport(fechaDesde, fechaHasta);
 
-  res.render('reports/index', {
-    title: 'Reportes',
-    active: 'reports',
-    report,
-    fechaDesde,
-    fechaHasta,
-  });
+    res.render('reports/index', {
+      title: 'Reportes',
+      active: 'reports',
+      report,
+      fechaDesde,
+      fechaHasta,
+    });
+  } catch (err) { next(err); }
 });
 
 /* ============================================================
@@ -184,15 +186,16 @@ function drawTable(doc, columns, rows, options = {}) {
   doc.y = y + 8;
 }
 
-router.get('/exportar.pdf', (req, res) => {
-  const fin = dt.todayISO();
-  const inicio = dt.addDaysISO(fin, -29);
+router.get('/exportar.pdf', async (req, res, next) => {
+  try {
+    const fin = dt.todayISO();
+    const inicio = dt.addDaysISO(fin, -29);
 
-  const fechaDesde = req.query.fechaDesde || inicio;
-  const fechaHasta = req.query.fechaHasta || fin;
+    const fechaDesde = req.query.fechaDesde || inicio;
+    const fechaHasta = req.query.fechaHasta || fin;
 
-  const report = passService.getReport(fechaDesde, fechaHasta);
-  const t = report.totals;
+    const report = await passService.getReport(fechaDesde, fechaHasta);
+    const t = report.totals;
 
   const doc = new PDFDocument({ margin: 40, size: 'A4', layout: 'landscape' });
   const filename = `reporte-pozablanca_${fechaDesde}_${fechaHasta}.pdf`;
@@ -321,6 +324,7 @@ router.get('/exportar.pdf', (req, res) => {
       res.redirect('/reportes');
     }
   });
+  } catch (err) { next(err); }
 });
 
 module.exports = router;

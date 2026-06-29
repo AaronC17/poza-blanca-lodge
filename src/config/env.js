@@ -9,6 +9,9 @@ const config = {
   port: parseInt(process.env.PORT, 10) || 3000,
   sessionSecret: process.env.SESSION_SECRET || 'cambia-esto-por-una-clave-secreta',
 
+  mongodbUri: process.env.MONGODB_URI || '',
+  mongodbDbName: process.env.MONGODB_DB_NAME || 'poza_blanca',
+
   admin: {
     username: process.env.ADMIN_USERNAME || 'admin',
     password: process.env.ADMIN_PASSWORD || 'admin123',
@@ -29,10 +32,6 @@ const config = {
 
   timezone: process.env.APP_TIMEZONE || 'America/Costa_Rica',
   rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX, 10) || 300,
-
-  dbPath: process.env.DB_PATH
-    ? path.resolve(process.cwd(), process.env.DB_PATH)
-    : path.resolve(process.cwd(), 'data', 'camping.db'),
 };
 
 module.exports = config;

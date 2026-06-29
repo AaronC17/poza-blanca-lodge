@@ -1,12 +1,5 @@
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
-
-const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'poza-test-'));
-const dbPath = path.join(tmpDir, 'test.db');
-
 process.env.NODE_ENV = 'test';
-process.env.DB_PATH = dbPath;
+process.env.MONGODB_DB_NAME = process.env.MONGODB_DB_NAME_TEST || 'poza_blanca_test';
 process.env.SESSION_SECRET = 'test-secret';
 process.env.ADMIN_USERNAME = 'admin';
 process.env.ADMIN_PASSWORD = 'testpass123';
@@ -14,13 +7,30 @@ process.env.ADMIN_NAME = 'Admin Test';
 process.env.LOG_LEVEL = 'error';
 process.env.APP_URL = 'http://localhost:3000';
 
-afterAll(() => {
+const { connectDb, Pass, User, EmailLog } = require('../src/config/database');
+
+async function clearAll() {
+  await Promise.all([
+    Pass.deleteMany({}),
+    User.deleteMany({}),
+    EmailLog.deleteMany({}),
+  ]);
+}
+
+beforeAll(async () => {
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI debe estar definida en .env para correr los tests (usa Atlas o local).');
+  }
+  await connectDb();
+  await clearAll();
+});
+
+afterAll(async () => {
+  const mongoose = require('mongoose');
   try {
-    const { getDb } = require('../src/config/database');
-    const db = getDb();
-    if (db && db.open) db.close();
-  } catch (e) {}
-  try {
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    await clearAll();
+    await mongoose.connection.close();
   } catch (e) {}
 });
+
+module.exports = { clearAll };

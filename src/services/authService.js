@@ -1,22 +1,23 @@
 const bcrypt = require('bcryptjs');
-const { getDb } = require('../config/database');
+const { User } = require('../config/database');
 
-function authenticate(username, password) {
-  const db = getDb();
-  const user = db.prepare('SELECT id, username, password_hash, name FROM users WHERE username = ?').get(username);
-
+async function authenticate(username, password) {
+  const user = await User.findOne({ username }).lean();
   if (!user) return null;
   if (!bcrypt.compareSync(password, user.password_hash)) return null;
 
-  return { id: user.id, username: user.username, name: user.name };
+  return { id: String(user._id), username: user.username, name: user.name };
 }
 
-function getCurrentUser(userId) {
-  const db = getDb();
-  const user = db
-    .prepare('SELECT id, username, name FROM users WHERE id = ?')
-    .get(userId);
-  return user || null;
+async function getCurrentUser(userId) {
+  let user;
+  try {
+    user = await User.findById(userId).lean();
+  } catch (e) {
+    user = null;
+  }
+  if (!user) return null;
+  return { id: String(user._id), username: user.username, name: user.name };
 }
 
 module.exports = { authenticate, getCurrentUser };

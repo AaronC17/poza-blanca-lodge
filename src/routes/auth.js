@@ -8,7 +8,7 @@ router.get('/login', (req, res) => {
   res.render('login', { title: 'Iniciar sesión', currentUser: null, layout: false });
 });
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res, next) => {
   const { username, password } = req.body || {};
 
   if (!username || !password) {
@@ -16,28 +16,30 @@ router.post('/login', (req, res) => {
     return res.redirect('/login');
   }
 
-  const user = authService.authenticate(username.trim(), password);
+  try {
+    const user = await authService.authenticate(username.trim(), password);
 
-  if (!user) {
-    req.flash('error', 'Usuario o contraseña incorrectos.');
-    return res.redirect('/login');
-  }
-
-  const redirectTo = req.session.returnTo || '/dashboard';
-
-  req.session.regenerate((err) => {
-    if (err) {
-      req.flash('error', 'No se pudo iniciar sesión. Inténtalo de nuevo.');
+    if (!user) {
+      req.flash('error', 'Usuario o contraseña incorrectos.');
       return res.redirect('/login');
     }
 
-    req.session.userId = user.id;
-    req.session.username = user.username;
-    req.session.name = user.name;
-    delete req.session.returnTo;
+    const redirectTo = req.session.returnTo || '/dashboard';
 
-    res.redirect(redirectTo);
-  });
+    req.session.regenerate((err) => {
+      if (err) {
+        req.flash('error', 'No se pudo iniciar sesión. Inténtalo de nuevo.');
+        return res.redirect('/login');
+      }
+
+      req.session.userId = user.id;
+      req.session.username = user.username;
+      req.session.name = user.name;
+      delete req.session.returnTo;
+
+      res.redirect(redirectTo);
+    });
+  } catch (err) { next(err); }
 });
 
 router.post('/logout', (req, res) => {

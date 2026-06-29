@@ -1,5 +1,5 @@
 const { z } = require('zod');
-const { getDb } = require('../config/database');
+const { Pass } = require('../config/database');
 const dt = require('../config/datetime');
 
 // Precios por categoría
@@ -106,219 +106,265 @@ function todayISO() {
   return dt.todayISO();
 }
 
-function createPass(data, userId) {
-  const db = getDb();
+// Convierte un documento Mongoose a un objeto plano con campos snake_case
+// y añade id numérico-secuencial simulado (para compatibilidad con vistas EJS)
+function toPlain(doc) {
+  if (!doc) return null;
+  const o = doc.toObject ? doc.toObject({ getters: false, virtuals: false }) : doc;
+  o.id = String(o._id);
+  return o;
+}
+
+async function createPass(data, userId) {
   const v = validatePass(data);
   if (!v.valid) return { ok: false, errors: v.errors };
 
   const d = v.data;
-  const info = db.prepare(`
-    INSERT INTO passes
-      (cedula, nombre, telefono, correo, cantidad_personas, placa_vehiculo,
-       fecha, hora_entrada, hora_salida, monto, estado_pago, observaciones, creado_por,
-       tipo_pase, forma_pago, adultos, ninos, parqueos)
-    VALUES
-      (@cedula, @nombre, @telefono, @correo, @cantidad_personas, @placa_vehiculo,
-       @fecha, @hora_entrada, @hora_salida, @monto, @estado_pago, @observaciones, @creado_por,
-       @tipo_pase, @forma_pago, @adultos, @ninos, @parqueos)
-  `).run({ ...d, creado_por: userId || null });
+  const pass = await Pass.create({
+    ...d,
+    creado_por: userId || null,
+  });
 
-  return { ok: true, id: info.lastInsertRowid };
+  return { ok: true, id: String(pass._id) };
 }
 
-function updatePass(id, data) {
-  const db = getDb();
-  const existing = db.prepare('SELECT id FROM passes WHERE id = ?').get(id);
+async function updatePass(id, data) {
+  let existing;
+  try {
+    existing = await Pass.findById(id).lean();
+  } catch (e) {
+    existing = null;
+  }
   if (!existing) return { ok: false, errors: { general: 'Pase no encontrado.' } };
 
   const v = validatePass(data);
   if (!v.valid) return { ok: false, errors: v.errors };
 
   const d = v.data;
-  db.prepare(`
-    UPDATE passes SET
-      cedula = @cedula,
-      nombre = @nombre,
-      telefono = @telefono,
-      correo = @correo,
-      cantidad_personas = @cantidad_personas,
-      placa_vehiculo = @placa_vehiculo,
-      fecha = @fecha,
-      hora_entrada = @hora_entrada,
-      hora_salida = @hora_salida,
-      monto = @monto,
-      estado_pago = @estado_pago,
-      observaciones = @observaciones,
-      tipo_pase = @tipo_pase,
-      forma_pago = @forma_pago,
-      adultos = @adultos,
-      ninos = @ninos,
-      parqueos = @parqueos,
-      updated_at = datetime('now')
-    WHERE id = @id
-  `).run({ ...d, id });
+  await Pass.updateOne(
+    { _id: id },
+    {
+      $set: {
+        cedula: d.cedula,
+        nombre: d.nombre,
+        telefono: d.telefono,
+        correo: d.correo,
+        cantidad_personas: d.cantidad_personas,
+        placa_vehiculo: d.placa_vehiculo,
+        fecha: d.fecha,
+        hora_entrada: d.hora_entrada,
+        hora_salida: d.hora_salida,
+        monto: d.monto,
+        estado_pago: d.estado_pago,
+        observaciones: d.observaciones,
+        tipo_pase: d.tipo_pase,
+        forma_pago: d.forma_pago,
+        adultos: d.adultos,
+        ninos: d.ninos,
+        parqueos: d.parqueos,
+        updated_at: new Date(),
+      },
+    }
+  );
 
   return { ok: true, id };
 }
 
-function deletePass(id) {
-  const db = getDb();
-  const info = db.prepare('DELETE FROM passes WHERE id = ?').run(id);
-  return info.changes > 0;
+async function deletePass(id) {
+  const result = await Pass.deleteOne({ _id: id });
+  return result.deletedCount > 0;
 }
 
-function getPassById(id) {
-  const db = getDb();
-  return db.prepare('SELECT * FROM passes WHERE id = ?').get(id) || null;
+async function getPassById(id) {
+  let doc;
+  try {
+    doc = await Pass.findById(id).lean();
+  } catch (e) {
+    doc = null;
+  }
+  if (!doc) return null;
+  doc.id = String(doc._id);
+  return doc;
 }
 
-function listPasses(filters = {}) {
-  const db = getDb();
-  const conditions = [];
-  const params = {};
-
-  if (filters.fecha) {
-    conditions.push('fecha = @fecha');
-    params.fecha = filters.fecha;
-  }
-  if (filters.fechaDesde) {
-    conditions.push('fecha >= @fechaDesde');
-    params.fechaDesde = filters.fechaDesde;
-  }
-  if (filters.fechaHasta) {
-    conditions.push('fecha <= @fechaHasta');
-    params.fechaHasta = filters.fechaHasta;
-  }
-  if (filters.estado_pago) {
-    conditions.push('estado_pago = @estado_pago');
-    params.estado_pago = filters.estado_pago;
-  }
-  if (filters.montoMin != null && filters.montoMin !== '') {
-    conditions.push('monto >= @montoMin');
-    params.montoMin = Number(filters.montoMin);
-  }
-  if (filters.montoMax != null && filters.montoMax !== '') {
-    conditions.push('monto <= @montoMax');
-    params.montoMax = Number(filters.montoMax);
-  }
+function buildFilter(filters = {}) {
+  const f = {};
+  if (filters.fecha) f.fecha = filters.fecha;
+  if (filters.fechaDesde) f.fecha = { ...f.fecha, $gte: filters.fechaDesde };
+  if (filters.fechaHasta) f.fecha = { ...f.fecha, $lte: filters.fechaHasta };
+  if (filters.estado_pago) f.estado_pago = filters.estado_pago;
+  if (filters.montoMin != null && filters.montoMin !== '') f.monto = { ...f.monto, $gte: Number(filters.montoMin) };
+  if (filters.montoMax != null && filters.montoMax !== '') f.monto = { ...f.monto, $lte: Number(filters.montoMax) };
   if (filters.q) {
-    conditions.push('(nombre LIKE @q OR cedula LIKE @q OR correo LIKE @q OR placa_vehiculo LIKE @q)');
-    params.q = `%${filters.q}%`;
+    const term = filters.q;
+    f.$or = [
+      { nombre: { $regex: term, $options: 'i' } },
+      { cedula: { $regex: term, $options: 'i' } },
+      { correo: { $regex: term, $options: 'i' } },
+      { placa_vehiculo: { $regex: term, $options: 'i' } },
+    ];
   }
+  return f;
+}
 
-  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
-  const order = filters.order === 'asc' ? 'ASC' : 'DESC';
+async function listPasses(filters = {}) {
+  const f = buildFilter(filters);
+  const order = filters.order === 'asc' ? 1 : -1;
+  const sort = { fecha: order, created_at: order };
 
   const paginate = filters.limit != null && filters.limit > 0;
-  let limitSql = '';
+  let rows, total;
   if (paginate) {
     const page = Math.max(1, parseInt(filters.page, 10) || 1);
     const perPage = Math.min(200, Math.max(1, parseInt(filters.limit, 10) || 20));
-    const offset = (page - 1) * perPage;
-    limitSql = 'LIMIT @perPage OFFSET @offset';
-    params.perPage = perPage;
-    params.offset = offset;
+    const skip = (page - 1) * perPage;
+    [rows, total] = await Promise.all([
+      Pass.find(f).sort(sort).skip(skip).limit(perPage).lean(),
+      Pass.countDocuments(f),
+    ]);
+    const totalPages = Math.max(1, Math.ceil(total / perPage));
+    rows.forEach((r) => { r.id = String(r._id); });
+    return { rows, total, totalPages };
   }
 
-  const sql = `SELECT * FROM passes ${where} ORDER BY fecha ${order}, created_at ${order} ${limitSql}`;
-  const rows = db.prepare(sql).all(params);
-
-  let total = rows.length;
-  let totalPages = 1;
-  if (paginate) {
-    total = db.prepare(`SELECT COUNT(*) as c FROM passes ${where}`).get(params).c;
-    const perPage = params.perPage;
-    totalPages = Math.max(1, Math.ceil(total / perPage));
-  }
-
-  return { rows, total, totalPages };
+  rows = await Pass.find(f).sort(sort).lean();
+  rows.forEach((r) => { r.id = String(r._id); });
+  return { rows, total: rows.length, totalPages: 1 };
 }
 
-function getDashboardStats(date = todayISO()) {
-  const db = getDb();
+async function getDashboardStats(date = todayISO()) {
+  // Resumen del día
+  const todayAgg = await Pass.aggregate([
+    { $match: { fecha: date } },
+    {
+      $group: {
+        _id: null,
+        total_pases: { $sum: 1 },
+        total_personas: { $sum: '$cantidad_personas' },
+        ingresos_pagados: { $sum: { $cond: [{ $eq: ['$estado_pago', 'pagado'] }, '$monto', 0] } },
+        ingresos_pendientes: { $sum: { $cond: [{ $eq: ['$estado_pago', 'pendiente'] }, '$monto', 0] } },
+        ingresos_totales: { $sum: '$monto' },
+      },
+    },
+  ]);
+  const today = todayAgg[0] || {
+    total_pases: 0, total_personas: 0, ingresos_pagados: 0,
+    ingresos_pendientes: 0, ingresos_totales: 0,
+  };
 
-  const today = db.prepare(`
-    SELECT
-      COUNT(*) as total_pases,
-      COALESCE(SUM(cantidad_personas), 0) as total_personas,
-      COALESCE(SUM(CASE WHEN estado_pago='pagado' THEN monto ELSE 0 END), 0) as ingresos_pagados,
-      COALESCE(SUM(CASE WHEN estado_pago='pendiente' THEN monto ELSE 0 END), 0) as ingresos_pendientes,
-      COALESCE(SUM(monto), 0) as ingresos_totales
-    FROM passes WHERE fecha = @fecha
-  `).get({ fecha: date });
+  // Últimos 7 días
+  const start7 = dt.addDaysISO(dt.todayISO(), -6);
+  const last7 = await Pass.aggregate([
+    { $match: { fecha: { $gte: start7 } } },
+    {
+      $group: {
+        _id: '$fecha',
+        fecha: { $first: '$fecha' },
+        pases: { $sum: 1 },
+        personas: { $sum: '$cantidad_personas' },
+        monto: { $sum: '$monto' },
+      },
+    },
+    { $sort: { fecha: 1 } },
+    { $project: { _id: 0, fecha: 1, pases: 1, personas: 1, monto: 1 } },
+  ]);
 
-  const last7 = db.prepare(`
-    SELECT
-      fecha,
-      COUNT(*) as pases,
-      COALESCE(SUM(cantidad_personas), 0) as personas,
-      COALESCE(SUM(monto), 0) as monto
-    FROM passes
-    WHERE fecha >= @start
-    GROUP BY fecha
-    ORDER BY fecha ASC
-  `).all({
-    start: dt.addDaysISO(dt.todayISO(), -6),
-  });
+  // Totales del mes (mismo YYYY-MM)
+  const yearMonth = date.slice(0, 7);
+  const monthAgg = await Pass.aggregate([
+    { $match: { fecha: { $regex: `^${yearMonth}` } } },
+    {
+      $group: {
+        _id: null,
+        total_pases: { $sum: 1 },
+        total_personas: { $sum: '$cantidad_personas' },
+        ingresos_totales: { $sum: '$monto' },
+      },
+    },
+  ]);
+  const month = monthAgg[0] || { total_pases: 0, total_personas: 0, ingresos_totales: 0 };
 
-  const month = db.prepare(`
-    SELECT
-      COUNT(*) as total_pases,
-      COALESCE(SUM(cantidad_personas), 0) as total_personas,
-      COALESCE(SUM(monto), 0) as ingresos_totales
-    FROM passes
-    WHERE strftime('%Y-%m', fecha) = strftime('%Y-%m', @fecha)
-  `).get({ fecha: date });
+  // Pases recientes
+  const recientes = await Pass.find().sort({ created_at: -1 }).limit(5).lean();
+  recientes.forEach((r) => { r.id = String(r._id); });
 
-  const recientes = db.prepare(`
-    SELECT * FROM passes ORDER BY created_at DESC LIMIT 5
-  `).all();
+  // Visitantes de hoy
+  const visitantesHoy = await Pass.find({ fecha: date })
+    .sort({ hora_entrada: 1, created_at: 1 }).lean();
+  visitantesHoy.forEach((r) => { r.id = String(r._id); });
 
-  const visitantesHoy = db.prepare(`
-    SELECT * FROM passes WHERE fecha = @fecha ORDER BY hora_entrada ASC, created_at ASC
-  `).all({ fecha: date });
+  // Pendientes de hoy
+  const pendientesHoy = await Pass.find({ fecha: date, estado_pago: 'pendiente' })
+    .sort({ monto: -1 }).lean();
+  pendientesHoy.forEach((r) => { r.id = String(r._id); });
 
-  const pendientesHoy = db.prepare(`
-    SELECT * FROM passes WHERE fecha = @fecha AND estado_pago = 'pendiente' ORDER BY monto DESC
-  `).all({ fecha: date });
+  // Top visitantes (agrupado por cédula)
+  const topVisitantes = await Pass.aggregate([
+    {
+      $group: {
+        _id: '$cedula',
+        cedula: { $first: '$cedula' },
+        nombre: { $first: '$nombre' },
+        visitas: { $sum: 1 },
+        personas: { $sum: '$cantidad_personas' },
+        total: { $sum: '$monto' },
+      },
+    },
+    { $sort: { visitas: -1, total: -1 } },
+    { $limit: 5 },
+    { $project: { _id: 0, cedula: 1, nombre: 1, visitas: 1, personas: 1, total: 1 } },
+  ]);
 
-  const topVisitantes = db.prepare(`
-    SELECT cedula, nombre, COUNT(*) as visitas, SUM(cantidad_personas) as personas, SUM(monto) as total
-    FROM passes
-    GROUP BY cedula
-    ORDER BY visitas DESC, total DESC
-    LIMIT 5
-  `).all();
+  // Promedios del mes
+  const promAgg = await Pass.aggregate([
+    { $match: { fecha: { $regex: `^${yearMonth}` } } },
+    {
+      $group: {
+        _id: null,
+        promedio: { $avg: '$monto' },
+        prom_personas: { $avg: '$cantidad_personas' },
+      },
+    },
+  ]);
+  const promedio = promAgg[0] || { promedio: 0, prom_personas: 0 };
 
-  const promedio = db.prepare(`
-    SELECT COALESCE(AVG(monto), 0) as promedio, COALESCE(AVG(cantidad_personas), 0) as prom_personas
-    FROM passes WHERE strftime('%Y-%m', fecha) = strftime('%Y-%m', @fecha)
-  `).get({ fecha: date });
+  // Desglose por tipo de pase (hoy)
+  const porTipoPase = await Pass.aggregate([
+    { $match: { fecha: date } },
+    {
+      $group: {
+        _id: '$tipo_pase',
+        tipo_pase: { $first: '$tipo_pase' },
+        total: { $sum: 1 },
+        monto: { $sum: '$monto' },
+      },
+    },
+    { $sort: { monto: -1 } },
+    { $project: { _id: 0, tipo_pase: 1, total: 1, monto: 1 } },
+  ]);
 
-  // Desglose por tipo de pase
-  const porTipoPase = db.prepare(`
-    SELECT tipo_pase, COUNT(*) as total, COALESCE(SUM(monto), 0) as monto
-    FROM passes WHERE fecha = @fecha
-    GROUP BY tipo_pase ORDER BY monto DESC
-  `).all({ fecha: date });
-
-  // Desglose por forma de pago
-  const porFormaPago = db.prepare(`
-    SELECT forma_pago, COUNT(*) as total, COALESCE(SUM(monto), 0) as monto
-    FROM passes WHERE fecha = @fecha
-    GROUP BY forma_pago ORDER BY monto DESC
-  `).all({ fecha: date });
+  // Desglose por forma de pago (hoy)
+  const porFormaPago = await Pass.aggregate([
+    { $match: { fecha: date } },
+    {
+      $group: {
+        _id: '$forma_pago',
+        forma_pago: { $first: '$forma_pago' },
+        total: { $sum: 1 },
+        monto: { $sum: '$monto' },
+      },
+    },
+    { $sort: { monto: -1 } },
+    { $project: { _id: 0, forma_pago: 1, total: 1, monto: 1 } },
+  ]);
 
   return { today, last7, month, recientes, visitantesHoy, pendientesHoy, topVisitantes, promedio, porTipoPase, porFormaPago };
 }
 
-function getReport(fechaDesde, fechaHasta) {
-  const db = getDb();
-  const rows = db.prepare(`
-    SELECT * FROM passes
-    WHERE fecha >= @desde AND fecha <= @hasta
-    ORDER BY fecha ASC, hora_entrada ASC
-  `).all({ desde: fechaDesde, hasta: fechaHasta });
+async function getReport(fechaDesde, fechaHasta) {
+  const rows = await Pass.find({ fecha: { $gte: fechaDesde, $lte: fechaHasta } })
+    .sort({ fecha: 1, hora_entrada: 1 }).lean();
+  rows.forEach((r) => { r.id = String(r._id); });
 
   const totals = rows.reduce(
     (acc, r) => {
@@ -351,24 +397,38 @@ function getReport(fechaDesde, fechaHasta) {
   };
 }
 
-function searchVisitors(q) {
-  const db = getDb();
-  const term = `%${q}%`;
-  return db.prepare(`
-    SELECT cedula, nombre, telefono, correo,
-      COUNT(*) as visitas,
-      MAX(fecha) as ultima_visita
-    FROM passes
-    WHERE cedula LIKE @q OR nombre LIKE @q OR correo LIKE @q
-    GROUP BY cedula
-    ORDER BY visitas DESC
-    LIMIT 8
-  `).all({ q: term });
+async function searchVisitors(q) {
+  const term = q;
+  return Pass.aggregate([
+    {
+      $match: {
+        $or: [
+          { cedula: { $regex: term, $options: 'i' } },
+          { nombre: { $regex: term, $options: 'i' } },
+          { correo: { $regex: term, $options: 'i' } },
+        ],
+      },
+    },
+    {
+      $group: {
+        _id: '$cedula',
+        cedula: { $first: '$cedula' },
+        nombre: { $first: '$nombre' },
+        telefono: { $first: '$telefono' },
+        correo: { $first: '$correo' },
+        visitas: { $sum: 1 },
+        ultima_visita: { $max: '$fecha' },
+      },
+    },
+    { $sort: { visitas: -1 } },
+    { $limit: 8 },
+    { $project: { _id: 0, cedula: 1, nombre: 1, telefono: 1, correo: 1, visitas: 1, ultima_visita: 1 } },
+  ]);
 }
 
 function buildCSV(rows) {
   // UTF-8 BOM to ensure Excel reads accents correctly
-  const BOM = '\uFEFF'; 
+  const BOM = '\uFEFF';
   const headers = ['Fecha', 'Cédula', 'Nombre Completo', 'Teléfono', 'Correo Electrónico', 'Tipo de Pase', 'Forma de Pago', 'Adultos', 'Niños', 'Parqueos', 'Cantidad Personas', 'Placa Vehículo', 'Hora Entrada', 'Hora Salida', 'Monto Total', 'Estado de Pago', 'Observaciones Extras'];
   const escape = (v) => {
     if (v == null) return '';

@@ -1,23 +1,26 @@
-const { getDb, initSchema } = require('../config/database');
+const { connectDb, User, Pass } = require('../config/database');
 const { seedAdmin } = require('./seed');
 
-function initDatabase() {
-  const db = getDb();
-  initSchema();
-  console.log('[db] Esquema inicializado correctamente.');
+async function initDatabase() {
+  await connectDb();
+  console.log('[db] Conexión y esquema MongoDB listos (Mongoose crea índices al primer uso).');
 
-  seedAdmin();
+  await seedAdmin();
 
-  const counts = {
-    users: db.prepare('SELECT COUNT(*) as c FROM users').get().c,
-    passes: db.prepare('SELECT COUNT(*) as c FROM passes').get().c,
-  };
-  console.log(`[db] Estado: ${counts.users} usuario(s), ${counts.passes} pase(s).`);
+  const [users, passes] = await Promise.all([
+    User.countDocuments(),
+    Pass.countDocuments(),
+  ]);
+  console.log(`[db] Estado: ${users} usuario(s), ${passes} pase(s).`);
 }
 
 if (require.main === module) {
-  initDatabase();
-  process.exit(0);
+  initDatabase()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error('[db] Error en initDatabase:', err);
+      process.exit(1);
+    });
 }
 
 module.exports = { initDatabase };
