@@ -4,7 +4,7 @@
   const estadoLabel = pass.estado_pago === 'pagado' ? 'Pagado' : 'Pendiente';
   const fechaLabel = new Date(pass.fecha + 'T00:00:00').toLocaleDateString('es-CR', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
   const creadoLabel = new Date(pass.created_at + 'Z').toLocaleString('es-CR', { dateStyle:'medium', timeStyle:'short' });
-  const tipoPaseLabels = { rio: 'Pase Río', camping: 'Camping', rancho: 'Pase Río + Rancho', piscina: 'Day Pass Piscina', parqueo: 'Parqueo' };
+  const tipoPaseLabels = { rio: 'Pase Río', camping: 'Camping', rancho: 'Rancho', piscina: 'Day Pass Piscina', parqueo: 'Parqueo' };
   const tipoPaseColors = { 
     rio: 'bg-green-100 text-green-700', 
     camping: 'bg-yellow-100 text-yellow-700', 

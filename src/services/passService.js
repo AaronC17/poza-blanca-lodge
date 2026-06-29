@@ -439,7 +439,7 @@ function buildCSV(rows) {
   const lines = [headers.join(';')];
   for (const r of rows) {
     const formattedDate = new Date(r.fecha + 'T00:00:00').toLocaleDateString('es-CR');
-    const tipoPaseLabels = { rio: 'Pase Río', camping: 'Camping', rancho: 'Pase Río + Rancho', piscina: 'Day Pass Piscina', parqueo: 'Parqueo' };
+    const tipoPaseLabels = { rio: 'Pase Río', camping: 'Camping', rancho: 'Rancho', piscina: 'Day Pass Piscina', parqueo: 'Parqueo' };
     const formaPagoLabels = { efectivo: 'Efectivo', sinpe: 'Sinpe', tarjeta: 'Tarjeta' };
     lines.push([
       formattedDate, r.cedula, r.nombre, r.telefono, r.correo,
