@@ -76,10 +76,10 @@
   --tw-c-red-600: 220 38 38;
 }
 
-* { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+*, *::before, *::after { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 
 html, body { margin: 0; padding: 0; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+html { scroll-behavior: smooth; font-size: 16px; }
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
@@ -362,33 +362,34 @@ html.dark .sidebar-poza::before { display: none; }
   width: 18px;
 }
 
-/* Flechas de navegación — visibles en touch, 44px táctil */
+/* Flechas de navegación — solo desktop, ocultas en móvil */
 .hero-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.15);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: #fff;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.3s, background 0.2s;
+  display: none;
 }
-.hero-banner:hover .hero-arrow { opacity: 1; }
-.hero-arrow:hover { background: rgba(255,255,255,0.3); }
-.hero-arrow.prev { left: 8px; }
-.hero-arrow.next { right: 8px; }
-/* En dispositivos táctiles (sin hover): flechas siempre visibles y 44px */
-@media (hover: none) {
-  .hero-arrow { opacity: 1; width: 44px; height: 44px; }
+@media (min-width: 640px) {
+  .hero-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s, background 0.2s;
+  }
+  .hero-banner:hover .hero-arrow { opacity: 1; }
+  .hero-arrow:hover { background: rgba(255,255,255,0.3); }
+  .hero-arrow.prev { left: 8px; }
+  .hero-arrow.next { right: 8px; }
 }
 
 /* ---------- Efectos de enfoque ---------- */
