@@ -12,7 +12,7 @@
 <%
   const esc = (s) => String(s == null ? '' : s).replace(/'/g, "\\'").replace(/\n/g, '\\n');
 %>
-  <form method="POST" action="<%= isEdit ? '/pases/' + pass.id : '/pases' %>" class="card-3d p-4 sm:p-5 animate-in-delay-1"
+  <form method="POST" action="<%= isEdit ? '/pases/' + pass.id : '/pases' %>" class="card-3d p-3 sm:p-4 animate-in-delay-1"
     x-data="{
       ...visitorSearch({
         cedula: '<%= esc(val('cedula')) %>',
@@ -33,8 +33,8 @@
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
 
     <!-- Sección visitante -->
-    <div class="mb-4">
-      <div class="flex items-center justify-between mb-2">
+    <div class="mb-3 sm:mb-4">
+      <div class="flex items-center justify-between mb-1.5 sm:mb-2">
         <p class="form-section-title flex items-center gap-1.5">
           <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
           Visitante
@@ -44,7 +44,7 @@
           Visitante recurrente
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
+      <div class="grid grid-cols-2 gap-x-2 gap-y-3 sm:gap-x-3 sm:gap-y-4 sm:grid-cols-4">
         <div class="relative" @click.outside="suggestions = []">
           <label for="cedula" class="block text-[10px] font-medium text-slate-500 mb-0.5">Cédula <span class="text-red-500">*</span></label>
           <input id="cedula" name="cedula" type="text" required value="<%= val('cedula') %>" class="input-poza block w-full <%= err('cedula') ? '!border-red-300' : '' %>"
@@ -84,12 +84,12 @@
     </div>
 
     <!-- Sección reserva -->
-    <div class="mb-4">
-      <p class="form-section-title mb-2 flex items-center gap-1.5">
+    <div class="mb-3 sm:mb-4">
+      <p class="form-section-title mb-1.5 sm:mb-2 flex items-center gap-1.5">
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
         Reserva
       </p>
-      <div class="grid grid-cols-2 gap-x-3 gap-y-4">
+      <div class="grid grid-cols-2 gap-x-2 gap-y-3 sm:gap-x-3 sm:gap-y-4">
         <div>
           <label for="fecha" class="block text-[10px] font-medium text-slate-500 mb-0.5">Fecha <span class="text-red-500">*</span></label>
           <input id="fecha" name="fecha" type="text" required value="<%= val('fecha') %>" autocomplete="off" class="input-poza block w-full datepicker <%= err('fecha') ? '!border-red-300' : '' %>" />
@@ -110,15 +110,15 @@
     </div>
 
     <!-- Sección tipo de pase -->
-    <div class="mb-4">
-      <p class="form-section-title mb-2 flex items-center gap-1.5">
+    <div class="mb-3 sm:mb-4">
+      <p class="form-section-title mb-1.5 sm:mb-2 flex items-center gap-1.5">
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z"/><path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z"/></svg>
         Tipo de pase
       </p>
       <div class="grid grid-cols-3 gap-2 sm:grid-cols-5 sm:gap-3">
         <label class="relative cursor-pointer">
           <input type="radio" name="tipo_pase" value="rio" class="sr-only" x-model="tipo_pase" @change="calcular()" <%= val('tipo_pase') === 'rio' ? 'checked' : '' %> />
-          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+          <div class="rounded-lg border-2 px-2 py-1.5 sm:py-2 text-center transition"
             :class="tipo_pase === 'rio'
               ? 'border-green-500 bg-green-50 dark:border-green-400 dark:bg-green-900/40'
               : 'border-slate-200 bg-white hover:border-green-300 dark:border-slate-700 dark:bg-slate-800'">
@@ -129,7 +129,7 @@
         </label>
         <label class="relative cursor-pointer">
           <input type="radio" name="tipo_pase" value="camping" class="sr-only" x-model="tipo_pase" @change="calcular()" />
-          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+          <div class="rounded-lg border-2 px-2 py-1.5 sm:py-2 text-center transition"
             :class="tipo_pase === 'camping'
               ? 'border-yellow-500 bg-yellow-50 dark:border-yellow-400 dark:bg-yellow-900/40'
               : 'border-slate-200 bg-white hover:border-yellow-300 dark:border-slate-700 dark:bg-slate-800'">
@@ -140,7 +140,7 @@
         </label>
         <label class="relative cursor-pointer">
           <input type="radio" name="tipo_pase" value="rancho" class="sr-only" x-model="tipo_pase" @change="calcular()" />
-          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+          <div class="rounded-lg border-2 px-2 py-1.5 sm:py-2 text-center transition"
             :class="tipo_pase === 'rancho'
               ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/40'
               : 'border-slate-200 bg-white hover:border-blue-300 dark:border-slate-700 dark:bg-slate-800'">
@@ -151,7 +151,7 @@
         </label>
         <label class="relative cursor-pointer">
           <input type="radio" name="tipo_pase" value="piscina" class="sr-only" x-model="tipo_pase" @change="calcular()" />
-          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+          <div class="rounded-lg border-2 px-2 py-1.5 sm:py-2 text-center transition"
             :class="tipo_pase === 'piscina'
               ? 'border-red-500 bg-red-50 dark:border-red-400 dark:bg-red-900/40'
               : 'border-slate-200 bg-white hover:border-red-300 dark:border-slate-700 dark:bg-slate-800'">
@@ -162,7 +162,7 @@
         </label>
         <label class="relative cursor-pointer">
           <input type="radio" name="tipo_pase" value="parqueo" class="sr-only" x-model="tipo_pase" @change="calcular()" />
-          <div class="rounded-lg border-2 px-2 py-2 text-center transition"
+          <div class="rounded-lg border-2 px-2 py-1.5 sm:py-2 text-center transition"
             :class="tipo_pase === 'parqueo'
               ? 'border-slate-500 bg-slate-50 dark:border-slate-400 dark:bg-slate-700/50'
               : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-800'">
@@ -175,12 +175,12 @@
     </div>
 
     <!-- Sección personas -->
-    <div class="mb-4">
-      <p class="form-section-title mb-2 flex items-center gap-1.5">
+    <div class="mb-3 sm:mb-4">
+      <p class="form-section-title mb-1.5 sm:mb-2 flex items-center gap-1.5">
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
         Personas
       </p>
-      <div class="grid grid-cols-3 gap-x-3 gap-y-4">
+      <div class="grid grid-cols-3 gap-x-2 gap-y-3 sm:gap-x-3 sm:gap-y-4">
         <div>
           <label for="adultos" class="block text-[10px] font-medium text-slate-500 mb-0.5">Adultos <span class="text-red-500">*</span></label>
           <input id="adultos" name="adultos" type="number" min="0" max="500" required value="<%= val('adultos') || 1 %>" class="input-poza block w-full" x-model.number="adultos" @input="calcular()" />
@@ -198,8 +198,8 @@
     </div>
 
     <!-- Sección pago -->
-    <div class="mb-4">
-      <p class="form-section-title mb-2 flex items-center gap-1.5">
+    <div class="mb-3 sm:mb-4">
+      <p class="form-section-title mb-1.5 sm:mb-2 flex items-center gap-1.5">
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Pago
       </p>
@@ -231,11 +231,11 @@
       </div>
       <div class="flex flex-wrap items-center justify-end gap-2 sm:pb-0.5 flex-shrink-0">
         <div class="flex flex-col items-center px-2">
-          <p class="text-lg font-bold text-poza-700 leading-none" x-text="formatCRC(montoCalculado)">₡0</p>
+          <p class="text-base sm:text-lg font-bold text-poza-700 leading-none" x-text="formatCRC(montoCalculado)">₡0</p>
           <p class="text-[9px] text-slate-400 mt-0.5">total</p>
         </div>
-        <a href="/pases" class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-medium text-slate-600 hover:bg-slate-50 transition min-h-[40px] inline-flex items-center">Cancelar</a>
-        <button type="submit" class="btn-poza inline-flex items-center gap-1 px-4 py-2.5 text-xs">
+        <a href="/pases" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition min-h-[34px] inline-flex items-center sm:px-4 sm:py-2.5 sm:min-h-[40px]">Cancelar</a>
+        <button type="submit" class="btn-poza inline-flex items-center gap-1 px-3 py-2 text-xs sm:px-4 sm:py-2.5">
           <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
           <%= isEdit ? 'Guardar' : 'Registrar' %>
         </button>
