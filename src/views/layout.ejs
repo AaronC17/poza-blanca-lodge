@@ -2,7 +2,7 @@
 <html lang="es" class="h-full">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
   <title><%= typeof title !== 'undefined' ? title + ' · ' : '' %>Poza Blanca Lodge</title>
   <meta name="description" content="Sistema de pases de día — Poza Blanca Lodge, San Mateo, Alajuela, Costa Rica" />
   <link rel="icon" type="image/png" href="/assets/favicon.png" />
@@ -21,12 +21,19 @@
     *, *::before, *::after { -webkit-text-size-adjust: none !important; text-size-adjust: none !important; -webkit-font-smoothing: antialiased; }
     html, body { margin: 0; padding: 0; }
     body { font-family: 'Inter', system-ui, sans-serif; touch-action: manipulation; }
+    input, textarea, select { font-size: 16px !important; -webkit-text-size-adjust: none !important; text-size-adjust: none !important; }
   </style>
   <script>
     (function () {
       try {
         // Respaldo para evitar que iOS/Safari escalen el texto base por accesibilidad del sistema
         document.documentElement.style.setProperty('font-size', '16px', 'important');
+        // Limpia service workers antiguos que pudieran causar recargas/caché fantasma
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+          });
+        }
       } catch (e) {}
     })();
   </script>
