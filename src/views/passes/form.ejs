@@ -44,10 +44,10 @@
           Visitante recurrente
         </div>
       </div>
-      <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div class="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
         <div class="relative" @click.outside="suggestions = []">
-          <label for="cedula" class="block text-[10px] font-medium text-slate-500">Cédula <span class="text-red-500">*</span></label>
-          <input id="cedula" name="cedula" type="text" required value="<%= val('cedula') %>" class="input-poza mt-0.5 block w-full py-2 <%= err('cedula') ? '!border-red-300' : '' %>"
+          <label for="cedula" class="block text-[10px] font-medium text-slate-500 mb-0.5">Cédula <span class="text-red-500">*</span></label>
+          <input id="cedula" name="cedula" type="text" required value="<%= val('cedula') %>" class="input-poza block w-full <%= err('cedula') ? '!border-red-300' : '' %>"
             x-model="cedula"
             @input="search()"
             @focus="search()"
@@ -68,17 +68,17 @@
           </div>
         </div>
         <div>
-          <label for="nombre" class="block text-[10px] font-medium text-slate-500">Nombre <span class="text-red-500">*</span></label>
-          <input id="nombre" name="nombre" type="text" required value="<%= val('nombre') %>" class="input-poza mt-0.5 block w-full py-2 <%= err('nombre') ? '!border-red-300' : '' %>" x-model="nombre" />
+          <label for="nombre" class="block text-[10px] font-medium text-slate-500 mb-0.5">Nombre <span class="text-red-500">*</span></label>
+          <input id="nombre" name="nombre" type="text" required value="<%= val('nombre') %>" class="input-poza block w-full <%= err('nombre') ? '!border-red-300' : '' %>" x-model="nombre" />
           <% if (err('nombre')) { %><p class="mt-0.5 text-[10px] text-red-600"><%= err('nombre') %></p><% } %>
         </div>
         <div>
-          <label for="telefono" class="block text-[10px] font-medium text-slate-500">Teléfono</label>
-          <input id="telefono" name="telefono" type="tel" value="<%= val('telefono') %>" class="input-poza mt-0.5 block w-full py-2" x-model="telefono" />
+          <label for="telefono" class="block text-[10px] font-medium text-slate-500 mb-0.5">Teléfono</label>
+          <input id="telefono" name="telefono" type="tel" value="<%= val('telefono') %>" class="input-poza block w-full" x-model="telefono" />
         </div>
         <div>
-          <label for="correo" class="block text-[10px] font-medium text-slate-500">Correo</label>
-          <input id="correo" name="correo" type="email" value="<%= val('correo') %>" class="input-poza mt-0.5 block w-full py-2 <%= err('correo') ? '!border-red-300' : '' %>" x-model="correo" />
+          <label for="correo" class="block text-[10px] font-medium text-slate-500 mb-0.5">Correo</label>
+          <input id="correo" name="correo" type="email" value="<%= val('correo') %>" class="input-poza block w-full <%= err('correo') ? '!border-red-300' : '' %>" x-model="correo" />
           <% if (err('correo')) { %><p class="mt-0.5 text-[10px] text-red-600"><%= err('correo') %></p><% } %>
         </div>
       </div>
@@ -90,22 +90,22 @@
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
         Reserva
       </p>
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-2 gap-x-3 gap-y-4">
         <div>
-          <label for="fecha" class="block text-[10px] font-medium text-slate-500">Fecha <span class="text-red-500">*</span></label>
-          <input id="fecha" name="fecha" type="text" required value="<%= val('fecha') %>" autocomplete="off" class="input-poza mt-0.5 block w-full py-2 datepicker <%= err('fecha') ? '!border-red-300' : '' %>" />
+          <label for="fecha" class="block text-[10px] font-medium text-slate-500 mb-0.5">Fecha <span class="text-red-500">*</span></label>
+          <input id="fecha" name="fecha" type="text" required value="<%= val('fecha') %>" autocomplete="off" class="input-poza block w-full datepicker <%= err('fecha') ? '!border-red-300' : '' %>" />
         </div>
         <div>
-          <label for="hora_entrada" class="block text-[10px] font-medium text-slate-500">Entrada</label>
-          <input id="hora_entrada" name="hora_entrada" type="text" value="<%= val('hora_entrada') %>" autocomplete="off" placeholder="Hora" class="input-poza mt-0.5 block w-full py-2 timepicker" />
+          <label for="hora_entrada" class="block text-[10px] font-medium text-slate-500 mb-0.5">Entrada</label>
+          <input id="hora_entrada" name="hora_entrada" type="text" value="<%= val('hora_entrada') %>" autocomplete="off" placeholder="Hora" class="input-poza block w-full timepicker" />
         </div>
         <div>
-          <label for="hora_salida" class="block text-[10px] font-medium text-slate-500">Salida</label>
-          <input id="hora_salida" name="hora_salida" type="text" value="<%= val('hora_salida') %>" autocomplete="off" placeholder="Hora" class="input-poza mt-0.5 block w-full py-2 timepicker" />
+          <label for="hora_salida" class="block text-[10px] font-medium text-slate-500 mb-0.5">Salida</label>
+          <input id="hora_salida" name="hora_salida" type="text" value="<%= val('hora_salida') %>" autocomplete="off" placeholder="Hora" class="input-poza block w-full timepicker" />
         </div>
         <div>
-          <label for="placa_vehiculo" class="block text-[10px] font-medium text-slate-500">Placa</label>
-          <input id="placa_vehiculo" name="placa_vehiculo" type="text" value="<%= val('placa_vehiculo') %>" placeholder="ABC-123" class="input-poza mt-0.5 block w-full py-2 uppercase" />
+          <label for="placa_vehiculo" class="block text-[10px] font-medium text-slate-500 mb-0.5">Placa</label>
+          <input id="placa_vehiculo" name="placa_vehiculo" type="text" value="<%= val('placa_vehiculo') %>" placeholder="ABC-123" class="input-poza block w-full uppercase" />
         </div>
       </div>
     </div>
@@ -181,18 +181,18 @@
         <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" /></svg>
         Personas
       </p>
-      <div class="grid grid-cols-3 gap-2 sm:gap-3">
+      <div class="grid grid-cols-3 gap-x-3 gap-y-4">
         <div>
-          <label for="adultos" class="block text-[10px] font-medium text-slate-500">Adultos <span class="text-red-500">*</span></label>
-          <input id="adultos" name="adultos" type="number" min="0" max="500" required value="<%= val('adultos') || 1 %>" class="input-poza mt-0.5 block w-full py-2" x-model.number="adultos" @input="calcular()" />
+          <label for="adultos" class="block text-[10px] font-medium text-slate-500 mb-0.5">Adultos <span class="text-red-500">*</span></label>
+          <input id="adultos" name="adultos" type="number" min="0" max="500" required value="<%= val('adultos') || 1 %>" class="input-poza block w-full" x-model.number="adultos" @input="calcular()" />
         </div>
         <div>
-          <label for="ninos" class="block text-[10px] font-medium text-slate-500">Niños</label>
-          <input id="ninos" name="ninos" type="number" min="0" max="500" value="<%= val('ninos') || 0 %>" class="input-poza mt-0.5 block w-full py-2" x-model.number="ninos" @input="calcular()" />
+          <label for="ninos" class="block text-[10px] font-medium text-slate-500 mb-0.5">Niños</label>
+          <input id="ninos" name="ninos" type="number" min="0" max="500" value="<%= val('ninos') || 0 %>" class="input-poza block w-full" x-model.number="ninos" @input="calcular()" />
         </div>
         <div>
-          <label for="parqueos" class="block text-[10px] font-medium text-slate-500">Vehículos</label>
-          <input id="parqueos" name="parqueos" type="number" min="0" max="50" value="<%= val('parqueos') || 0 %>" class="input-poza mt-0.5 block w-full py-2" x-model.number="parqueos" @input="calcular()" />
+          <label for="parqueos" class="block text-[10px] font-medium text-slate-500 mb-0.5">Vehículos</label>
+          <input id="parqueos" name="parqueos" type="number" min="0" max="50" value="<%= val('parqueos') || 0 %>" class="input-poza block w-full" x-model.number="parqueos" @input="calcular()" />
         </div>
       </div>
       <input type="hidden" name="cantidad_personas" :value="totalPersonas" />
@@ -206,16 +206,16 @@
       </p>
       <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div class="flex-1 min-w-0">
-          <label for="forma_pago" class="block text-[10px] font-medium text-slate-500">Forma de pago <span class="text-red-500">*</span></label>
-          <select id="forma_pago" name="forma_pago" class="input-poza mt-0.5 block w-full py-2" x-model="forma_pago">
+          <label for="forma_pago" class="block text-[10px] font-medium text-slate-500 mb-0.5">Forma de pago <span class="text-red-500">*</span></label>
+          <select id="forma_pago" name="forma_pago" class="input-poza block w-full" x-model="forma_pago">
             <option value="efectivo">Efectivo</option>
             <option value="sinpe">Sinpe</option>
             <option value="tarjeta">Tarjeta</option>
           </select>
         </div>
         <div class="flex-1 min-w-0">
-          <label for="estado_pago" class="block text-[10px] font-medium text-slate-500">Estado</label>
-          <select id="estado_pago" name="estado_pago" class="input-poza mt-0.5 block w-full py-2">
+          <label for="estado_pago" class="block text-[10px] font-medium text-slate-500 mb-0.5">Estado</label>
+          <select id="estado_pago" name="estado_pago" class="input-poza block w-full">
             <option value="pagado" <%= pass.estado_pago==='pagado' ? 'selected' : '' %>>Pagado</option>
             <option value="pendiente" <%= pass.estado_pago==='pendiente' ? 'selected' : '' %>>Pendiente</option>
           </select>
@@ -227,8 +227,8 @@
     <!-- Observaciones + Botones + Total -->
     <div class="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-end">
       <div class="flex-1 min-w-0">
-        <label for="observaciones" class="block text-[10px] font-medium text-slate-500">Observaciones</label>
-        <textarea id="observaciones" name="observaciones" rows="2" class="input-poza mt-0.5 block w-full resize-none py-2"><%= val('observaciones') %></textarea>
+        <label for="observaciones" class="block text-[10px] font-medium text-slate-500 mb-0.5">Observaciones</label>
+        <textarea id="observaciones" name="observaciones" rows="2" class="input-poza block w-full resize-none"><%= val('observaciones') %></textarea>
       </div>
       <div class="flex flex-wrap items-center justify-end gap-2 sm:pb-0.5 flex-shrink-0">
         <div class="flex flex-col items-center px-2">
