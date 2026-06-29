@@ -1,0 +1,164 @@
+<%
+  const fmtCRC = typeof formatCRC === 'function' ? formatCRC : (v) => new Intl.NumberFormat('es-CR', { style:'currency', currency:'CRC', minimumFractionDigits:0, maximumFractionDigits:0 }).format(v||0);
+  const estadoClass = (e) => e === 'pagado' ? 'badge-paid' : 'badge-pending';
+  const estadoLabel = (e) => e === 'pagado' ? 'Pagado' : 'Pendiente';
+%>
+
+<div class="space-y-4">
+  <div class="card-3d animate-in">
+    <div class="border-b border-slate-100 px-4 py-2.5">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-900">Pases registrados</h2>
+          <% if (count > 10) { %>
+          <div class="mt-0.5 flex items-center gap-2">
+            <p class="text-xs text-slate-500"><%= count %> resultado(s)</p>
+            <form method="GET" action="/pases" class="flex items-center gap-1">
+              <input type="hidden" name="q" value="<%= filters.q %>" />
+              <input type="hidden" name="fecha" value="<%= filters.fecha %>" />
+              <input type="hidden" name="estado_pago" value="<%= filters.estado_pago %>" />
+              <input type="hidden" name="page" value="1" />
+              <select name="perPage" onchange="this.form.submit()" class="input-poza h-6 py-0 pr-6 pl-2 text-[10px]">
+                <option value="10" <%= perPage == 10 ? 'selected' : '' %>>10</option>
+                <option value="20" <%= perPage == 20 ? 'selected' : '' %>>20</option>
+                <option value="50" <%= perPage == 50 ? 'selected' : '' %>>50</option>
+                <option value="100" <%= perPage == 100 ? 'selected' : '' %>>100</option>
+                <option value="todos" <%= perPage === 'todos' ? 'selected' : '' %>>Todos</option>
+              </select>
+            </form>
+          </div>
+          <% } %>
+        </div>
+        <a href="/pases/nuevo" class="btn-poza inline-flex items-center justify-center gap-1.5 text-xs">
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          Registrar pase
+        </a>
+      </div>
+
+      <form method="GET" action="/pases" class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="lg:col-span-2">
+          <input type="text" name="q" value="<%= filters.q %>" placeholder="Buscar por nombre, cédula, correo, placa"
+            class="input-poza block w-full" />
+        </div>
+        <div>
+          <input type="date" name="fecha" value="<%= filters.fecha %>" class="input-poza block w-full" />
+        </div>
+        <div>
+          <select name="estado_pago" class="input-poza block w-full">
+            <option value="">Todos los estados</option>
+            <option value="pagado" <%= filters.estado_pago==='pagado' ? 'selected' : '' %>>Pagado</option>
+            <option value="pendiente" <%= filters.estado_pago==='pendiente' ? 'selected' : '' %>>Pendiente</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button type="submit" class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-poza-800 px-3 py-2 text-xs font-semibold text-white hover:bg-poza-900 transition">
+            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg>
+            Filtrar
+          </button>
+          <a href="/pases" class="inline-flex items-center justify-center rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 transition">Limpiar</a>
+        </div>
+      </form>
+    </div>
+
+    <% if (passes.length === 0) { %>
+      <div class="px-4 py-12 text-center">
+        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-poza-50">
+          <svg class="h-6 w-6 text-poza-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+        </div>
+        <h3 class="mt-3 text-sm font-semibold text-slate-900">No hay pases registrados</h3>
+        <p class="mt-0.5 text-xs text-slate-500">No se encontraron resultados con los filtros aplicados.</p>
+        <a href="/pases/nuevo" class="btn-poza mt-3 inline-flex items-center gap-1.5 text-xs">Registrar el primer pase</a>
+      </div>
+    <% } else { %>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-slate-200">
+          <thead class="bg-slate-50/80">
+            <tr>
+              <th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Visitante</th>
+              <th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Fecha / Hora</th>
+              <th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Personas</th>
+              <th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500 hidden sm:table-cell">Vehículo</th>
+              <th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Monto</th>
+              <th class="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wide text-slate-500">Estado</th>
+              <th class="px-4 py-2.5 text-right text-[10px] font-semibold uppercase tracking-wide text-slate-500">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 bg-white">
+            <% passes.forEach(function(p) { %>
+              <tr class="row-hover">
+                <td class="px-4 py-2.5">
+                  <a href="/pases/<%= p.id %>/detalle" class="flex items-center gap-2.5 group">
+                    <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-poza-100 to-poza-200 text-[11px] font-semibold uppercase text-poza-700"><%= (p.nombre || '?').charAt(0) %></div>
+                    <div class="min-w-0">
+                      <p class="truncate text-[13px] font-medium text-slate-900 group-hover:text-poza-700 transition"><%= p.nombre %></p>
+                      <p class="truncate text-[11px] text-slate-400"><%= p.cedula %></p>
+                    </div>
+                  </a>
+                </td>
+                <td class="px-4 py-2.5">
+                  <p class="text-[13px] text-slate-700"><%= p.fecha %></p>
+                  <p class="text-[11px] text-slate-400"><%= fmtTime(p.hora_entrada) || '—' %><%= p.hora_salida ? ' → ' + fmtTime(p.hora_salida) : '' %></p>
+                </td>
+                <td class="px-4 py-2.5 text-[13px] text-slate-700"><%= p.cantidad_personas %></td>
+                <td class="px-4 py-2.5 text-[13px] uppercase text-slate-700 hidden sm:table-cell"><%= p.placa_vehiculo || '—' %></td>
+                <td class="px-4 py-2.5 text-[13px] font-semibold text-poza-700"><%= fmtCRC(p.monto) %></td>
+                <td class="px-4 py-2.5">
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium <%= estadoClass(p.estado_pago) %>"><%= estadoLabel(p.estado_pago) %></span>
+                </td>
+                <td class="px-4 py-2.5">
+                  <div class="flex items-center justify-end gap-0.5">
+                    <a href="/pases/<%= p.id %>/detalle" title="Ver detalle" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-poza-50 hover:text-poza-700 transition">
+                      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    </a>
+                    <a href="/pases/<%= p.id %>/editar" title="Editar" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-poza-50 hover:text-poza-700 transition">
+                      <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>
+                    </a>
+                    <form method="POST" action="/pases/<%= p.id %>/reenviar-correo" class="inline">
+                      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+                      <button type="submit" title="Reenviar correo" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                      </button>
+                    </form>
+                    <form method="POST" action="/pases/<%= p.id %>/eliminar" class="inline">
+                      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+                      <input type="hidden" name="redirect" value="<%= typeof currentUrl !== 'undefined' ? currentUrl : '/pases' %>" />
+                      <button type="button" onclick="openConfirmModal(this.closest('form'), '¿Eliminar este pase? Esta acción no se puede deshacer.')" title="Eliminar" class="inline-flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-red-50 hover:text-red-600 transition">
+                        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if (count > 10) { %>
+      <div class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-600">
+        <p>
+          <% if (perPage === 'todos') { %>
+            Mostrando todos los resultados · <%= count %> total(es)
+          <% } else { %>
+            Página <strong><%= page %></strong> de <strong><%= totalPages %></strong> · <%= count %> resultado(s)
+          <% } %>
+        </p>
+        <% if (totalPages > 1) { %>
+        <div class="flex items-center gap-1">
+          <% if (page > 1) { %>
+            <a href="<%= buildPageLink(page - 1) %>" class="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 hover:bg-slate-50 transition">‹ Anterior</a>
+          <% } else { %>
+            <span class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-slate-300">‹ Anterior</span>
+          <% } %>
+          <% if (page < totalPages) { %>
+            <a href="<%= buildPageLink(page + 1) %>" class="inline-flex items-center gap-1 rounded-lg border border-slate-300 px-2.5 py-1.5 hover:bg-slate-50 transition">Siguiente ›</a>
+          <% } else { %>
+            <span class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-slate-300">Siguiente ›</span>
+          <% } %>
+        </div>
+        <% } %>
+      </div>
+      <% } %>
+    <% } %>
+  </div>
+</div>

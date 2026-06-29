@@ -1,0 +1,293 @@
+<%
+  const err = (field) => errors && errors[field] ? errors[field] : null;
+  const val = (field) => (pass[field] != null ? pass[field] : '');
+%>
+
+<div class="mx-auto max-w-5xl">
+  <div class="mb-3 flex items-center gap-2 animate-in">
+    <a href="/pases" class="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-poza-50 hover:text-poza-700 transition">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"/></svg>
+    </a>
+    <div>
+      <h2 class="font-display text-lg font-semibold text-poza-900 leading-tight"><%= isEdit ? 'Editar pase' : 'Nuevo pase de día' %></h2>
+      <p class="text-xs text-slate-500"><%= isEdit ? 'Actualiza los datos del visitante.' : 'Completa los datos y registra la entrada.' %></p>
+    </div>
+  </div>
+
+  <% if (errors && errors.general) { %>
+    <div class="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700 animate-in"><%= errors.general %></div>
+  <% } %>
+
+<%
+  const esc = (s) => String(s == null ? '' : s).replace(/'/g, "\\'").replace(/\n/g, '\\n');
+%>
+  <form method="POST" action="<%= isEdit ? '/pases/' + pass.id : '/pases' %>" class="card-3d p-4 sm:p-5 animate-in-delay-1"
+    x-data="visitorSearch({
+      cedula: '<%= esc(val('cedula')) %>',
+      nombre: '<%= esc(val('nombre')) %>',
+      telefono: '<%= esc(val('telefono')) %>',
+      correo: '<%= esc(val('correo')) %>'
+    })"
+  >
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+
+    <!-- Sección visitante -->
+    <div class="mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="form-section-title flex items-center gap-1.5">
+          <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+          Visitante
+        </p>
+        <div x-show="suggestions.length > 0" x-cloak class="text-[10px] text-poza-600 font-medium flex items-center gap-1">
+          <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.852l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>
+          Visitante recurrente — click para autocompletar
+        </div>
+      </div>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <!-- Cédula con autocompletado -->
+        <div class="relative" @click.outside="suggestions = []">
+          <label for="cedula" class="block text-xs font-medium text-slate-600">Cédula <span class="text-red-500">*</span></label>
+          <input id="cedula" name="cedula" type="text" required value="<%= val('cedula') %>" class="input-poza mt-1 block w-full <%= err('cedula') ? '!border-red-300' : '' %>"
+            x-model="cedula"
+            @input="search()"
+            @focus="search()"
+            autocomplete="off" />
+          <% if (err('cedula')) { %><p class="mt-1 text-xs text-red-600"><%= err('cedula') %></p><% } %>
+          <!-- Sugerencias -->
+          <div x-show="suggestions.length > 0" x-cloak
+            class="absolute z-20 mt-1 w-full rounded-lg border border-slate-200 bg-white shadow-lg max-h-56 overflow-y-auto">
+            <template x-for="s in suggestions" :key="s.cedula">
+              <button type="button" @click="select(s)"
+                class="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-poza-50 transition border-b border-slate-50 last:border-0">
+                <span class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-poza-100 text-[10px] font-bold text-poza-700 uppercase" x-text="s.nombre.charAt(0)"></span>
+                <div class="min-w-0 flex-1">
+                  <p class="truncate text-[12px] font-medium text-slate-800" x-text="s.nombre"></p>
+                  <p class="truncate text-[10px] text-slate-400" x-text="s.cedula + ' · ' + s.visitas + ' visita(s)'"></p>
+                </div>
+              </button>
+            </template>
+          </div>
+        </div>
+        <div class="sm:col-span-2 lg:col-span-2">
+          <label for="nombre" class="block text-xs font-medium text-slate-600">Nombre completo <span class="text-red-500">*</span></label>
+          <input id="nombre" name="nombre" type="text" required value="<%= val('nombre') %>" class="input-poza mt-1 block w-full <%= err('nombre') ? '!border-red-300' : '' %>" x-model="nombre" />
+          <% if (err('nombre')) { %><p class="mt-1 text-xs text-red-600"><%= err('nombre') %></p><% } %>
+        </div>
+        <div>
+          <label for="telefono" class="block text-xs font-medium text-slate-600">Teléfono</label>
+          <input id="telefono" name="telefono" type="tel" value="<%= val('telefono') %>" placeholder="8888-8888" class="input-poza mt-1 block w-full" x-model="telefono" />
+        </div>
+        <div class="sm:col-span-2 lg:col-span-2">
+          <label for="correo" class="block text-xs font-medium text-slate-600">Correo electrónico</label>
+          <input id="correo" name="correo" type="email" value="<%= val('correo') %>" placeholder="visitante@correo.com" class="input-poza mt-1 block w-full <%= err('correo') ? '!border-red-300' : '' %>" x-model="correo" />
+          <% if (err('correo')) { %><p class="mt-1 text-xs text-red-600"><%= err('correo') %></p><% } %>
+          <p class="mt-0.5 text-[10px] text-slate-400">Se enviará la confirmación aquí.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección reserva -->
+    <div class="mb-4">
+      <p class="form-section-title mb-2 flex items-center gap-1.5">
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+        Reserva
+      </p>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <label for="fecha" class="block text-xs font-medium text-slate-600">Fecha <span class="text-red-500">*</span></label>
+          <input id="fecha" name="fecha" type="date" required value="<%= val('fecha') %>" class="input-poza mt-1 block w-full <%= err('fecha') ? '!border-red-300' : '' %>" />
+          <% if (err('fecha')) { %><p class="mt-1 text-xs text-red-600"><%= err('fecha') %></p><% } %>
+        </div>
+    <div>
+      <label for="hora_entrada" class="block text-xs font-medium text-slate-600">Entrada</label>
+      <input id="hora_entrada" name="hora_entrada" type="text" value="<%= val('hora_entrada') %>" autocomplete="off" placeholder="Seleccione hora" class="input-poza mt-1 block w-full timepicker" />
+    </div>
+    <div>
+      <label for="hora_salida" class="block text-xs font-medium text-slate-600">Salida</label>
+      <input id="hora_salida" name="hora_salida" type="text" value="<%= val('hora_salida') %>" autocomplete="off" placeholder="Seleccione hora" class="input-poza mt-1 block w-full timepicker" />
+    </div>
+        <div>
+          <label for="placa_vehiculo" class="block text-xs font-medium text-slate-600">Placa vehículo</label>
+          <input id="placa_vehiculo" name="placa_vehiculo" type="text" value="<%= val('placa_vehiculo') %>" placeholder="ABC-123" class="input-poza mt-1 block w-full uppercase" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Sección pago -->
+    <div class="mb-4">
+      <p class="form-section-title mb-2 flex items-center gap-1.5">
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Pago
+      </p>
+      <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div>
+          <label for="cantidad_personas" class="block text-xs font-medium text-slate-600">Personas <span class="text-red-500">*</span></label>
+          <input id="cantidad_personas" name="cantidad_personas" type="number" min="1" max="500" required value="<%= val('cantidad_personas') %>" class="input-poza mt-1 block w-full <%= err('cantidad_personas') ? '!border-red-300' : '' %>" />
+          <% if (err('cantidad_personas')) { %><p class="mt-1 text-xs text-red-600"><%= err('cantidad_personas') %></p><% } %>
+        </div>
+        <div>
+          <label for="monto" class="block text-xs font-medium text-slate-600">Monto (₡) <span class="text-red-500">*</span></label>
+          <div class="relative mt-1">
+            <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-xs font-semibold text-poza-600">₡</span>
+            <input id="monto" name="monto" type="number" min="0" step="1" required value="<%= val('monto') %>" placeholder="0" class="input-poza block w-full pl-7 <%= err('monto') ? '!border-red-300' : '' %>" />
+          </div>
+          <% if (err('monto')) { %><p class="mt-1 text-xs text-red-600"><%= err('monto') %></p><% } %>
+        </div>
+        <div>
+          <label for="estado_pago" class="block text-xs font-medium text-slate-600">Estado</label>
+          <select id="estado_pago" name="estado_pago" class="input-poza mt-1 block w-full">
+            <option value="pagado" <%= pass.estado_pago==='pagado' ? 'selected' : '' %>>Pagado</option>
+            <option value="pendiente" <%= pass.estado_pago==='pendiente' ? 'selected' : '' %>>Pendiente</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="mb-5">
+      <label for="observaciones" class="block text-xs font-medium text-slate-600">Observaciones</label>
+      <textarea id="observaciones" name="observaciones" rows="2" class="input-poza mt-1 block w-full resize-none"><%= val('observaciones') %></textarea>
+    </div>
+
+    <!-- Botones -->
+    <div class="flex items-center justify-end gap-2 border-t border-slate-100 pt-4">
+      <a href="/pases" class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition">Cancelar</a>
+      <button type="submit" class="btn-poza inline-flex items-center gap-1.5 px-4 py-2 text-xs">
+        <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+        <%= isEdit ? 'Guardar cambios' : 'Registrar pase' %>
+      </button>
+    </div>
+  </form>
+</div>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+
+<style>
+  [x-cloak] { display: none !important; }
+
+  /* Flatpickr time picker — minimal */
+  .flatpickr-calendar {
+    border-radius: 14px;
+    border: 1px solid rgba(148,163,184,0.22);
+    box-shadow: 0 16px 50px -12px rgba(15,23,42,0.14);
+    font-family: 'Inter', system-ui, sans-serif;
+    padding: 10px;
+    width: auto;
+    min-width: 180px;
+  }
+  .flatpickr-calendar.open {
+    animation: fpFadeIn 160ms ease-out;
+  }
+  .flatpickr-time {
+    border-top: none;
+    max-height: none;
+    line-height: 1;
+  }
+  .flatpickr-time .numInputWrapper {
+    flex: 1;
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(241,245,249,0.5);
+    margin: 0 3px;
+    transition: background 0.15s;
+  }
+  .flatpickr-time .numInputWrapper:hover {
+    background: rgba(226,232,240,0.55);
+  }
+  .flatpickr-time input {
+    font-size: 17px;
+    font-weight: 600;
+    color: #0f172a;
+    height: 44px;
+    padding: 0;
+  }
+  .flatpickr-time .flatpickr-time-separator {
+    font-size: 17px;
+    font-weight: 500;
+    color: #64748b;
+    margin: 0 2px;
+  }
+  .flatpickr-am-pm {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 0 8px;
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(241,245,249,0.5);
+    margin-left: 4px;
+  }
+  .flatpickr-time .numInputWrapper span {
+    border: none;
+    opacity: 0.5;
+  }
+  .flatpickr-time .numInputWrapper span:hover {
+    opacity: 1;
+  }
+  .flatpickr-time .numInputWrapper span.arrowUp:after {
+    border-bottom-color: #64748b;
+  }
+  .flatpickr-time .numInputWrapper span.arrowDown:after {
+    border-top-color: #64748b;
+  }
+
+  /* Inputs hora: estilo limpio para el altInput de flatpickr */
+  .input-poza.flatpickr-input[readonly] {
+    background-color: #fff;
+    cursor: pointer;
+  }
+  /* Evita escritura manual excesiva en el timepicker */
+  .flatpickr-input {
+    caret-color: transparent;
+  }
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    flatpickr(".timepicker", {
+      enableTime: true,
+      noCalendar: true,
+      dateFormat: "H:i",
+      altInput: true,
+      altFormat: "h:i K",
+      time_24hr: false,
+      locale: "es",
+      minuteIncrement: 15,
+      allowInput: false
+    });
+  });
+
+  function visitorSearch(initial) {
+    return {
+      cedula: initial.cedula || '',
+      nombre: initial.nombre || '',
+      telefono: initial.telefono || '',
+      correo: initial.correo || '',
+      suggestions: [],
+      timer: null,
+
+      async search() {
+        const q = this.cedula.trim();
+        if (q.length < 2) { this.suggestions = []; return; }
+        clearTimeout(this.timer);
+        this.timer = setTimeout(async () => {
+          try {
+            const res = await fetch('/pases/buscar-visitantes?q=' + encodeURIComponent(q));
+            this.suggestions = await res.json();
+          } catch (e) { this.suggestions = []; }
+        }, 200);
+      },
+
+      select(s) {
+        this.cedula = s.cedula;
+        this.nombre = s.nombre;
+        this.telefono = s.telefono || '';
+        this.correo = s.correo || '';
+        this.suggestions = [];
+      }
+    };
+  }
+</script>

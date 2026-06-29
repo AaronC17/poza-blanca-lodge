@@ -1,0 +1,358 @@
+<%
+  const fmtCRC = (v) => new Intl.NumberFormat('es-CR', { style:'currency', currency:'CRC', minimumFractionDigits:0, maximumFractionDigits:0 }).format(v||0);
+  const fmtNum = (v) => new Intl.NumberFormat('es-CR').format(v||0);
+  const fechaLabel = new Date(fecha + 'T00:00:00').toLocaleDateString('es-CR', { weekday:'long', year:'numeric', month:'long', day:'numeric' }).toLowerCase();
+  const chartLabels = stats.last7.map(d => new Date(d.fecha + 'T00:00:00').toLocaleDateString('es-CR', { day:'numeric', month:'short' }));
+  const chartMontos = stats.last7.map(d => d.monto);
+  const chartPases = stats.last7.map(d => d.pases);
+  const chartPersonas = stats.last7.map(d => d.personas);
+  const estadoClass = (e) => e === 'pagado' ? 'badge-paid' : 'badge-pending';
+  const estadoLabel = (e) => e === 'pagado' ? 'Pagado' : 'Pendiente';
+%>
+
+<div class="space-y-4">
+  <!-- Hero carrusel compacto -->
+  <div
+    class="hero-banner h-24 sm:h-28 animate-in"
+    x-data="heroCarousel({
+      slides: [
+        { src: '/assets/hero/hero-1.jpg', alt: 'Hotel Boutique Poza Blanca Lodge' },
+        { src: '/assets/hero/hero-2.jpg', alt: 'Piscina con vistas al río Poza Blanca Lodge' },
+        { src: '/assets/hero/hero-3.jpg', alt: 'Piscina infinita Poza Blanca Lodge' },
+        { src: '/assets/hero/hero-4.jpg', alt: 'Piscina nueva Poza Blanca Lodge' },
+        { src: '/assets/hero/hero-5.jpg', alt: 'Vistas al río Machuca Poza Blanca Lodge' }
+      ],
+      interval: 5500
+    })"
+    @mouseenter="stopAuto()" @mouseleave="startAuto()"
+  >
+    <template x-for="(slide, i) in slides" :key="i">
+      <div class="hero-slide" :class="i === current ? 'active' : ''">
+        <img :src="slide.src" :alt="slide.alt" />
+      </div>
+    </template>
+    <button class="hero-arrow prev" @click="prev()" aria-label="Anterior">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/></svg>
+    </button>
+    <button class="hero-arrow next" @click="next()" aria-label="Siguiente">
+      <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/></svg>
+    </button>
+    <div class="hero-dots">
+      <template x-for="(slide, i) in slides" :key="'dot-'+i">
+        <button class="hero-dot" :class="i === current ? 'active' : ''" @click="goTo(i)" :aria-label="'Ir a imagen ' + (i+1)"></button>
+      </template>
+    </div>
+    <div class="hero-content h-full flex items-center px-4 sm:px-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="h-1.5 w-1.5 rounded-full bg-poza-400 pulse-dot"></span>
+            <span class="text-[10px] sm:text-xs font-medium text-poza-200 uppercase tracking-wider">Poza Blanca Lodge · Recepción</span>
+          </div>
+          <h2 class="font-display mt-0.5 text-xl sm:text-2xl text-white capitalize leading-tight"><%= fechaLabel %></h2>
+        </div>
+        <form method="GET" action="/dashboard" class="flex items-center gap-1.5">
+          <input type="date" name="fecha" value="<%= fecha %>" onchange="this.form.submit()"
+            class="h-8 rounded-lg border border-white/20 bg-white/10 px-2.5 text-xs text-white backdrop-blur focus:outline-none focus:ring-2 focus:ring-poza-400 [color-scheme:light]" />
+          <button type="submit" class="h-8 rounded-lg bg-white/15 px-3 text-xs font-medium text-white hover:bg-white/25 transition">Ir</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alerta de pagos pendientes -->
+  <% if (stats.pendientesHoy.length > 0) { %>
+  <div class="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-amber-50/40 px-4 py-3 animate-in flex items-center gap-3">
+    <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+      <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
+    </span>
+    <div class="flex-1 min-w-0">
+      <p class="text-sm font-semibold text-amber-800"><%= stats.pendientesHoy.length %> pago(s) pendiente(s) hoy</p>
+      <p class="text-xs text-amber-700/80">Total por cobrar: <%= fmtCRC(stats.today.ingresos_pendientes) %></p>
+    </div>
+    <a href="/pases?fecha=<%= fecha %>&estado_pago=pendiente" class="text-xs font-semibold text-amber-700 hover:text-amber-900 whitespace-nowrap">Revisar →</a>
+  </div>
+  <% } %>
+
+  <!-- KPIs compactos -->
+  <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <div class="card-3d p-3.5 animate-in-delay-1">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium text-slate-500">Pases hoy</p>
+        <span class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-poza-50 text-poza-600">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" /></svg>
+        </span>
+      </div>
+      <p class="mt-2 text-2xl font-bold text-slate-900"><%= fmtNum(stats.today.total_pases) %></p>
+      <p class="mt-0.5 text-[11px] text-slate-400"><%= fmtNum(stats.today.total_personas) %> personas</p>
+    </div>
+    <div class="card-3d p-3.5 animate-in-delay-2">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium text-slate-500">Ingresos hoy</p>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-poza-50 text-poza-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </span>
+      </div>
+      <p class="mt-2 text-xl sm:text-2xl font-bold text-poza-700"><%= fmtCRC(stats.today.ingresos_pagados) %></p>
+      <p class="mt-0.5 text-[11px] text-slate-400"><%= fmtCRC(stats.today.ingresos_pendientes) %> pendiente</p>
+    </div>
+    <div class="card-3d p-3.5 animate-in-delay-3">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium text-slate-500">Ingresos del mes</p>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-poza-50 text-poza-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+        </span>
+      </div>
+      <p class="mt-2 text-xl sm:text-2xl font-bold text-slate-900"><%= fmtCRC(stats.month.ingresos_totales) %></p>
+      <p class="mt-0.5 text-[11px] text-slate-400">Prom. pase: <%= fmtCRC(stats.promedio.promedio) %></p>
+    </div>
+    <div class="card-3d p-3.5 animate-in-delay-4">
+      <div class="flex items-center justify-between">
+        <p class="text-xs font-medium text-slate-500">Ticket promedio</p>
+        <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-poza-50 text-poza-600">
+          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+        </span>
+      </div>
+      <p class="mt-2 text-xl sm:text-2xl font-bold text-slate-900"><%= fmtCRC(stats.promedio.promedio) %></p>
+      <p class="mt-0.5 text-[11px] text-slate-400"><%= fmtNum(Math.round(stats.promedio.prom_personas)) %> pers/pase</p>
+    </div>
+  </div>
+
+  <!-- Fila principal: gráfica + visitantes hoy -->
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <!-- Gráfica mejor organizada -->
+    <div class="lg:col-span-2 card-3d p-4 animate-in-delay-2">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-900">Últimos 7 días</h2>
+          <p class="text-xs text-slate-500">Ingresos, pases y personas</p>
+        </div>
+        <div class="flex items-center gap-3 text-[11px] text-slate-600">
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-poza-500"></span>Ingresos</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-gold-400"></span>Pases</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-indigo-400"></span>Personas</span>
+        </div>
+      </div>
+      <div class="h-56">
+        <canvas id="ingresosChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Visitantes hoy -->
+    <div class="card-3d p-4 animate-in-delay-3 flex flex-col">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <h2 class="text-sm font-semibold text-slate-900">Visitantes hoy</h2>
+          <span class="rounded-full bg-poza-50 px-2 py-0.5 text-[10px] font-bold text-poza-700"><%= stats.visitantesHoy.length %></span>
+        </div>
+        <a href="/pases?fecha=<%= fecha %>" class="text-[11px] font-medium text-poza-600 hover:text-poza-800">Ver →</a>
+      </div>
+      <div class="flex-1 overflow-y-auto max-h-64 -mx-1 px-1">
+        <% if (stats.visitantesHoy.length === 0) { %>
+          <div class="flex flex-col items-center justify-center py-8 text-center">
+            <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 mb-2">
+              <svg class="h-5 w-5 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.244m0 0A15.137 15.137 0 0 1 12 16.5M7.5 4.5h9"/></svg>
+            </div>
+            <p class="text-xs text-slate-400">Sin visitantes hoy</p>
+          </div>
+        <% } else { stats.visitantesHoy.forEach(function(p) { %>
+          <a href="/pases/<%= p.id %>/detalle" class="flex items-center gap-2.5 rounded-lg px-2 py-2 row-hover mb-1">
+            <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-poza-100 to-poza-200 text-[11px] font-semibold text-poza-700 uppercase"><%= (p.nombre || '?').charAt(0) %></div>
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-[13px] font-medium text-slate-800"><%= p.nombre %></p>
+              <p class="truncate text-[11px] text-slate-400"><%= fmtTime(p.hora_entrada) || 'Sin hora' %> · <%= p.cantidad_personas %> pers.</p>
+            </div>
+            <span class="inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-medium <%= estadoClass(p.estado_pago) %>"><%= estadoLabel(p.estado_pago) %></span>
+          </a>
+        <% }) } %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fila secundaria: top visitantes + accesos rápidos -->
+  <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+    <!-- Top visitantes frecuentes -->
+    <div class="lg:col-span-2 card-3d p-4 animate-in-delay-3">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-slate-900">Visitantes frecuentes</h2>
+        <span class="text-[11px] text-slate-400">Histórico</span>
+      </div>
+      <% if (stats.topVisitantes.length === 0) { %>
+        <p class="text-xs text-slate-400 py-4 text-center">Aún no hay datos.</p>
+      <% } else { %>
+      <div class="space-y-2">
+        <% stats.topVisitantes.forEach(function(v, i) { %>
+        <div class="flex items-center gap-3">
+          <span class="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold <%= i===0 ? 'bg-poza-100 text-poza-700' : 'bg-slate-100 text-slate-500' %>"><%= i+1 %></span>
+          <div class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-poza-100 to-poza-200 text-[11px] font-semibold text-poza-700 uppercase"><%= (v.nombre || '?').charAt(0) %></div>
+          <div class="min-w-0 flex-1">
+            <p class="truncate text-[13px] font-medium text-slate-800"><%= v.nombre %></p>
+            <p class="truncate text-[11px] text-slate-400"><%= v.visitas %> visita(s) · <%= v.personas %> personas</p>
+          </div>
+          <div class="text-right">
+            <p class="text-[13px] font-semibold text-poza-700"><%= fmtCRC(v.total) %></p>
+            <p class="text-[10px] text-slate-400">Acumulado</p>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Accesos rápidos -->
+    <div class="card-3d p-4 animate-in-delay-4">
+      <h2 class="text-sm font-semibold text-slate-900 mb-3">Accesos rápidos</h2>
+      <div class="grid grid-cols-2 gap-2">
+        <a href="/pases/nuevo" class="flex flex-col items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-3 hover:border-poza-200 hover:bg-poza-50/40 transition">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-poza-50 text-poza-600">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          </span>
+          <span class="text-[11px] font-medium text-slate-700">Nuevo pase</span>
+        </a>
+        <a href="/pases" class="flex flex-col items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-3 hover:border-poza-200 hover:bg-poza-50/40 transition">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg>
+          </span>
+          <span class="text-[11px] font-medium text-slate-700">Ver pases</span>
+        </a>
+        <a href="/reportes" class="flex flex-col items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-3 hover:border-poza-200 hover:bg-poza-50/40 transition">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-poza-50 text-poza-600">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z"/></svg>
+          </span>
+          <span class="text-[11px] font-medium text-slate-700">Reportes</span>
+        </a>
+        <a href="/pases?estado_pago=pendiente" class="flex flex-col items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-3 hover:border-amber-200 hover:bg-amber-50/40 transition">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </span>
+          <span class="text-[11px] font-medium text-slate-700">Pendientes</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function heroCarousel(opts) {
+    return {
+      slides: opts.slides || [],
+      current: 0,
+      interval: opts.interval || 5500,
+      timer: null,
+      init() { this.startAuto(); },
+      startAuto() {
+        this.stopAuto();
+        if (this.slides.length > 1) this.timer = setInterval(() => this.next(), this.interval);
+      },
+      stopAuto() { if (this.timer) { clearInterval(this.timer); this.timer = null; } },
+      next() { this.current = (this.current + 1) % this.slides.length; },
+      prev() { this.current = (this.current - 1 + this.slides.length) % this.slides.length; },
+      goTo(i) { this.current = i; this.startAuto(); }
+    };
+  }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const ctx = document.getElementById('ingresosChart');
+  if (ctx) {
+    const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 220);
+    gradient.addColorStop(0, 'rgba(47,133,23,0.9)');
+    gradient.addColorStop(1, 'rgba(47,133,23,0.45)');
+
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: <%- JSON.stringify(chartLabels) %>,
+        datasets: [
+          {
+            label: 'Ingresos',
+            data: <%- JSON.stringify(chartMontos) %>,
+            backgroundColor: gradient,
+            hoverBackgroundColor: 'rgba(29,64,26,1)',
+            borderRadius: 6,
+            maxBarThickness: 36,
+            order: 2,
+          },
+          {
+            label: 'Pases',
+            data: <%- JSON.stringify(chartPases) %>,
+            type: 'line',
+            borderColor: 'rgba(212,168,67,1)',
+            backgroundColor: 'rgba(212,168,67,0.1)',
+            tension: 0.4,
+            yAxisID: 'y1',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: 'rgba(212,168,67,1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            borderWidth: 2,
+            order: 1,
+          },
+          {
+            label: 'Personas',
+            data: <%- JSON.stringify(chartPersonas) %>,
+            type: 'line',
+            borderColor: 'rgba(99,102,241,0.85)',
+            backgroundColor: 'rgba(99,102,241,0.08)',
+            tension: 0.4,
+            yAxisID: 'y1',
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: 'rgba(99,102,241,1)',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            borderWidth: 2,
+            borderDash: [5, 4],
+            order: 0,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(21,46,19,0.96)',
+            padding: 12,
+            cornerRadius: 10,
+            displayColors: true,
+            boxPadding: 4,
+            titleFont: { size: 12, weight: '700' },
+            bodyFont: { size: 11 },
+            callbacks: {
+              label: (c) => {
+                if (c.dataset.label === 'Ingresos') return ` Ingresos: ₡${c.raw.toLocaleString('es-CR')}`;
+                if (c.dataset.label === 'Pases') return ` Pases: ${c.raw}`;
+                return ` Personas: ${c.raw}`;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { callback: (v) => '₡' + v.toLocaleString('es-CR', { notation: 'compact' }), font: { size: 10 }, color: '#94a3b8' },
+            grid: { color: '#f1f5f9', drawTicks: false },
+            border: { display: false },
+          },
+          y1: {
+            beginAtZero: true,
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: { precision: 0, font: { size: 10 }, color: '#94a3b8' },
+            border: { display: false },
+          },
+          x: {
+            grid: { display: false },
+            ticks: { font: { size: 10 }, color: '#94a3b8' },
+            border: { display: false },
+          }
+        }
+      }
+    });
+  }
+</script>
