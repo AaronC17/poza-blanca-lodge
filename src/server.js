@@ -13,6 +13,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const methodOverride = require('method-override');
 
+const mongoose = require('mongoose');
 const { connectDb } = require('./config/database');
 const { seedAdmin } = require('./db/seed');
 const { requireAuth } = require('./middleware/auth');
@@ -123,8 +124,10 @@ app.use(async (req, res, next) => {
 
 const sessionMiddleware = session({
   store: MongoStore.create({
-    mongoUrl: config.mongodbUri,
-    dbName: config.mongodbDbName,
+    clientPromise: (async () => {
+      await connectDb();
+      return mongoose.connection.getClient();
+    })(),
     collectionName: 'sessions',
     ttl: 12 * 60 * 60, // 12h, alineado con cookie maxAge
     autoRemove: 'native',
