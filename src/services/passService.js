@@ -29,7 +29,7 @@ const passSchema = z.object({
   cedula: z.string().trim().min(1, 'La cédula es obligatoria').max(50),
   nombre: z.string().trim().min(1, 'El nombre es obligatorio').max(150),
   telefono: z.string().trim().max(50).optional().or(z.literal('')),
-  correo: z.string().trim().toLowerCase().email('Correo no válido').optional().or(z.literal('')),
+  correo: z.string().trim().max(150).optional().or(z.literal('')),
   cantidad_personas: z.coerce.number().int('La cantidad debe ser un número entero').min(1, 'Mínimo 1 persona').max(500),
   placa_vehiculo: z.string().trim().max(50).optional().or(z.literal('')),
   fecha: z.string().trim().min(1, 'La fecha es obligatoria'),

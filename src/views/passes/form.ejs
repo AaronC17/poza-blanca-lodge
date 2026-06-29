@@ -78,8 +78,7 @@
         </div>
         <div>
           <label for="correo" class="block text-[10px] font-medium text-slate-500 mb-0.5">Correo</label>
-          <input id="correo" name="correo" type="email" value="<%= val('correo') %>" class="input-poza block w-full <%= err('correo') ? '!border-red-300' : '' %>" x-model="correo" />
-          <% if (err('correo')) { %><p class="mt-0.5 text-[10px] text-red-600"><%= err('correo') %></p><% } %>
+          <input id="correo" name="correo" type="text" value="<%= val('correo') %>" class="input-poza block w-full" x-model="correo" />
         </div>
       </div>
     </div>
